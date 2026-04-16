@@ -44,20 +44,6 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
-// app.post("/api/create-cafe", async (req, res) => {
-//   const Cafe = require("./models/Cafe");
-
-//   const cafe = new Cafe({
-//     name: "My Cafe",
-//     email: "admin@gmail.com",
-//     password: "123456"
-//   });
-
-//   await cafe.save();
-
-//   res.json(cafe);
-// });
-// Start server ONLY after DB connects
 const startServer = async () => {
   await connectDB();
 
