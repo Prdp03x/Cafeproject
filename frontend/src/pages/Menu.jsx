@@ -20,9 +20,21 @@ const Menu = () => {
   const [params] = useSearchParams();
   const tableFromURL = params.get("table");
   const cafeId = params.get("cafe");
+
+  useEffect(() => {
+  if (cafeId) {
+    localStorage.setItem("cafeId", cafeId);
+  }
+
+  if (tableFromURL) {
+    localStorage.setItem("tableNumber", tableFromURL);
+  }
+}, [cafeId, tableFromURL]);
+
+
   const [tableNumber, setTableNumber] = useState(
     tableFromURL ? Number(tableFromURL) : null,
-  ); //Added line 4
+  ); 
 
   const { menu, categories, selectedCategory, loadMenu } = useMenu();
 
@@ -41,82 +53,23 @@ const Menu = () => {
     document.title = "Menu | My Cafe";
   }, []);
 
-  // 🔥 CORRECT ORDER SYNC (WITH BACKEND)
-  // useEffect(() => {
-  //   const syncOrders = async () => {
-  //     const ids = JSON.parse(localStorage.getItem("orders")) || [];
-
-  //     if (ids.length === 0) {
-  //       setOrderCount(0);
-  //       return;
-  //     }
-
-  //     try {
-  //       const results = await Promise.all(
-  //         ids.map((id) =>
-  //           API.get(`/order/${id}`)
-  //             .then((res) => res.data)
-  //             .catch(() => null),
-  //         ),
-  //       );
-
-  //       const valid = results.filter(Boolean);
-
-  //       setOrderCount(valid.length);
-
-  //       // 🔥 CLEAN STORAGE
-  //       const validIds = valid.map((o) => o._id);
-  //       localStorage.setItem("orders", JSON.stringify(validIds));
-  //     } catch (err) {
-  //       console.log(err);
-  //     }
-  //   };
-
-  //   syncOrders();
-  // }, []);
-
   useEffect(() => {
-  const syncOrders = async () => {
-    const allOrders =
-      JSON.parse(localStorage.getItem("orders")) || {};
-
-    const ids = allOrders[cafeId] || [];
-
-    if (ids.length === 0) {
-      setOrderCount(0);
-      return;
-    }
+  const fetchOrderCount = async () => {
+    if (!cafeId || !tableNumber) return;
 
     try {
-      const results = await Promise.all(
-        ids.map((id) =>
-          API.get(`/order/${id}`)
-            .then((res) => res.data)
-            .catch(() => null)
-        )
+      const res = await API.get(
+        `/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}`
       );
 
-      const valid = results.filter(Boolean);
-
-      setOrderCount(valid.length);
-
-      // ✅ FIXED STORAGE (per cafe)
-      const validIds = valid.map((o) => o._id);
-
-      const updatedOrders = {
-        ...allOrders,
-        [cafeId]: validIds,
-      };
-
-      localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
+      setOrderCount(res.data.length);
     } catch (err) {
       console.log(err);
     }
   };
 
-  syncOrders();
-}, [cafeId]);
+  fetchOrderCount();
+}, [cafeId, tableNumber]);
 
   // 🔥 PLACE ORDER
   const placeOrder = async () => {
@@ -132,7 +85,7 @@ const Menu = () => {
     }
 
     try {
-      const res = await API.post("/order", {
+      const res = await API.post("/orders", {
         items: cart,
         total,
         tableNumber,
@@ -142,10 +95,6 @@ const Menu = () => {
 
       const orderId = res.data.orderId;
 
-      // const existing = JSON.parse(localStorage.getItem("orders")) || [];
-      // const updated = [...existing, orderId];
-
-      // localStorage.setItem("orders", JSON.stringify(updated));
       const allOrders = JSON.parse(localStorage.getItem("orders")) || {};
 
       const cafeOrders = allOrders[cafeId] || [];
@@ -158,7 +107,6 @@ const Menu = () => {
       
 
       setOrderCount(updatedCafeOrders .length);
-      // setOrderCount(updated.length);
 
       setShowSuccess(true);
 
@@ -198,7 +146,7 @@ const Menu = () => {
               {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                 <button
                   key={num}
-                  onClick={() => setTableNumber(num)}
+                  onClick={() => setTableNumber(String(num))}
                   className="px-4 py-2 bg-black text-white rounded"
                 >
                   {num}

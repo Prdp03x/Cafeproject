@@ -25,7 +25,7 @@ const useOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await API.get("/order/admin"); // only orders is there before
+      const res = await API.get("/orders/admin"); // only orders is there before
       const newOrders = res.data;
 
       if (newOrders.length > prevCountRef.current) {
@@ -62,6 +62,7 @@ const useOrders = () => {
 
   return {
     orders,
+    setOrders,
     newOrderIds,
     fetchOrders,
   };

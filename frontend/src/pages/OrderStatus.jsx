@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import EmptyState from "../components/EmptyState";
 import API from "../api/api";
+import socket from "../socket";
 
 const OrderStatus = () => {
   const [orders, setOrders] = useState([]);
@@ -15,43 +16,35 @@ const OrderStatus = () => {
     document.title = "Your Orders | My Cafe";
   }, []);
 
-  const fetchOrders = async () => {
-    try {
-      const allOrders =
-        JSON.parse(localStorage.getItem("orders")) || {};
+  useEffect(() => {
+  socket.emit("joinCafe", cafeId);
 
-      const orderIds = allOrders[cafeId] || [];
+  socket.on("orderUpdated", () => {
+    fetchOrders();
+  });
 
-      if (!orderIds.length) {
-        setOrders([]);
-        return;
-      }
-
-      const results = await Promise.all(
-        orderIds.map((id) =>
-          API.get(`/order/${id}`)
-            .then((res) => res.data)
-            .catch(() => null)
-        )
-      );
-
-      const validOrders = results.filter(Boolean);
-      setOrders(validOrders);
-
-      // ✅ FIXED STORAGE (per cafe)
-      const validIds = validOrders.map((o) => o._id);
-
-      const updatedOrders = {
-        ...allOrders,
-        [cafeId]: validIds,
-      };
-
-      localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-    }
+  return () => {
+    socket.off("orderUpdated");
   };
+}, [cafeId]);
+
+  const fetchOrders = async () => {
+  try {
+    if (!cafeId || !tableNumber) {
+      console.warn("Missing cafeId or tableNumber");
+      setOrders([]);
+      return;
+    }
+
+    const res = await API.get(`/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}`);
+
+    setOrders(res.data);
+
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    setOrders([]);
+  }
+};
 
   useEffect(() => {
     fetchOrders();

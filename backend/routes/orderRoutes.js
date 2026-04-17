@@ -17,12 +17,13 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Table number required" });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(cafeId)) {
+      return res.status(400).json({ error: "Invalid cafeId" });
+    }
+
     const total = items.reduce((sum, item) => {
       const extras =
-        item.selectedOptions?.reduce(
-          (s, opt) => s + opt.price,
-          0
-        ) || 0;
+        item.selectedOptions?.reduce((s, opt) => s + opt.price, 0) || 0;
 
       return sum + (item.price + extras) * item.qty;
     }, 0);
@@ -31,19 +32,20 @@ router.post("/", async (req, res) => {
       cafeId: new mongoose.Types.ObjectId(cafeId),
       items,
       total,
-      tableNumber, // ✅ now valid
+      tableNumber: String(tableNumber), // ✅ now valid
       status: "pending",
     });
 
     await newOrder.save();
+    
+    const io = req.app.get("io");
+
+    io.to(cafeId.toString()).emit("newOrder", newOrder);
 
     res.json({
       message: "Order placed",
       orderId: newOrder._id,
     });
-
-    
-
   } catch (err) {
     console.error("🔥 ORDER ERROR:", err); // 👈 ADD THIS
     res.status(500).json({ error: err.message });
@@ -53,7 +55,29 @@ router.post("/", async (req, res) => {
 // Get all orders
 router.get("/admin", auth, async (req, res) => {
   try {
-    const orders = await Order.find({cafeId: req.cafeId}).sort({ createdAt: -1 });
+    const orders = await Order.find({ cafeId: req.cafeId }).sort({
+      createdAt: -1,
+    });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ CUSTOMER - Get orders by cafeId + tableNumber
+router.get("/customer", async (req, res) => {
+  try {
+    const { cafeId, tableNumber } = req.query;
+
+    if (!cafeId || !tableNumber) {
+      return res.status(400).json({ error: "Missing cafeId or tableNumber" });
+    }
+
+    const orders = await Order.find({
+      cafeId: new mongoose.Types.ObjectId(cafeId),
+      tableNumber: String(tableNumber),
+    }).sort({ createdAt: -1 });
+
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -69,7 +93,17 @@ router.put("/:id", auth, async (req, res) => {
       return res.status(400).json({ error: "Status is required" });
     }
 
-    await Order.findByIdAndUpdate({_id:req.params.id,  cafeId: req.cafeId}, { status });
+    const io = req.app.get("io");
+
+    await Order.findByIdAndUpdate(
+      { _id: req.params.id, cafeId: req.cafeId },
+      { status },
+    );
+    // 🔥 EMIT UPDATE
+    io.to(req.cafeId.toString()).emit("orderUpdated", {
+      id: req.params.id,
+      status,
+    });
 
     res.json({ message: "Order updated" });
   } catch (err) {
@@ -80,7 +114,10 @@ router.put("/:id", auth, async (req, res) => {
 // Delete order
 router.delete("/:id", auth, async (req, res) => {
   try {
+    const io = req.app.get("io");
     await Order.findByIdAndDelete({ _id: req.params.id, cafeId: req.cafeId });
+    // 🔥 EMIT DELETE
+    io.to(req.cafeId.toString()).emit("orderDeleted", req.params.id);
     res.json({ message: "Order deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
