@@ -1,6 +1,6 @@
-import { useSearchParams } from "react-router"; //Added line 1
+import { useSearchParams } from "react-router";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router"; // ✅ FIXED IMPORT
+import { useNavigate } from "react-router";
 import OrderSuccessToast from "../components/OrderSuccessToast";
 import CategoryFilter from "../components/Menu/CategoryFilter";
 import MenuCard from "../components/Menu/MenuCard";
@@ -12,13 +12,17 @@ import Header from "../components/Common/Header";
 
 const Menu = () => {
   const navigate = useNavigate();
-
+  // UseState Hooks
   const [showCart, setShowCart] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
-  const [params] = useSearchParams(); //Added line 2
-  const tableFromURL = params.get("table"); //Added line 3
-  const [tableNumber, setTableNumber] = useState(tableFromURL ? Number(tableFromURL) : null); //Added line 4
+  // UseSearchParam Hooks
+  const [params] = useSearchParams();
+  const tableFromURL = params.get("table");
+  const cafeId = params.get("cafe");
+  const [tableNumber, setTableNumber] = useState(
+    tableFromURL ? Number(tableFromURL) : null,
+  ); //Added line 4
 
   const { menu, categories, selectedCategory, loadMenu } = useMenu();
 
@@ -38,76 +42,135 @@ const Menu = () => {
   }, []);
 
   // 🔥 CORRECT ORDER SYNC (WITH BACKEND)
+  // useEffect(() => {
+  //   const syncOrders = async () => {
+  //     const ids = JSON.parse(localStorage.getItem("orders")) || [];
+
+  //     if (ids.length === 0) {
+  //       setOrderCount(0);
+  //       return;
+  //     }
+
+  //     try {
+  //       const results = await Promise.all(
+  //         ids.map((id) =>
+  //           API.get(`/order/${id}`)
+  //             .then((res) => res.data)
+  //             .catch(() => null),
+  //         ),
+  //       );
+
+  //       const valid = results.filter(Boolean);
+
+  //       setOrderCount(valid.length);
+
+  //       // 🔥 CLEAN STORAGE
+  //       const validIds = valid.map((o) => o._id);
+  //       localStorage.setItem("orders", JSON.stringify(validIds));
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   };
+
+  //   syncOrders();
+  // }, []);
+
   useEffect(() => {
-    const syncOrders = async () => {
-      const ids = JSON.parse(localStorage.getItem("orders")) || [];
+  const syncOrders = async () => {
+    const allOrders =
+      JSON.parse(localStorage.getItem("orders")) || {};
 
-      if (ids.length === 0) {
-        setOrderCount(0);
-        return;
-      }
+    const ids = allOrders[cafeId] || [];
 
-      try {
-        const results = await Promise.all(
-          ids.map((id) =>
-            API.get(`/order/${id}`)
-              .then((res) => res.data)
-              .catch(() => null),
-          ),
-        );
+    if (ids.length === 0) {
+      setOrderCount(0);
+      return;
+    }
 
-        const valid = results.filter(Boolean);
+    try {
+      const results = await Promise.all(
+        ids.map((id) =>
+          API.get(`/order/${id}`)
+            .then((res) => res.data)
+            .catch(() => null)
+        )
+      );
 
-        setOrderCount(valid.length);
+      const valid = results.filter(Boolean);
 
-        // 🔥 CLEAN STORAGE
-        const validIds = valid.map((o) => o._id);
-        localStorage.setItem("orders", JSON.stringify(validIds));
-      } catch (err) {
-        console.log(err);
-      }
-    };
+      setOrderCount(valid.length);
 
-    syncOrders();
-  }, []);
+      // ✅ FIXED STORAGE (per cafe)
+      const validIds = valid.map((o) => o._id);
+
+      const updatedOrders = {
+        ...allOrders,
+        [cafeId]: validIds,
+      };
+
+      localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  syncOrders();
+}, [cafeId]);
 
   // 🔥 PLACE ORDER
   const placeOrder = async () => {
-  if (cart.length === 0) return;
+    if (cart.length === 0) return;
 
-  if (!tableNumber) {
-    throw new Error("Table not selected"); // ✅ THROW
-  }
+    if (!tableNumber) {
+      throw new Error("Table not selected"); // ✅ THROW
+    }
 
-  try {
-    const res = await API.post("/order", {
-      items: cart,
-      total,
-      tableNumber,
-      status: "pending",
-    });
+    if (!cafeId) {
+      alert("Invalid QR / Cafe not found");
+      return;
+    }
 
-    const orderId = res.data.orderId;
+    try {
+      const res = await API.post("/order", {
+        items: cart,
+        total,
+        tableNumber,
+        status: "pending",
+        cafeId,
+      });
 
-    const existing = JSON.parse(localStorage.getItem("orders")) || [];
-    const updated = [...existing, orderId];
+      const orderId = res.data.orderId;
 
-    localStorage.setItem("orders", JSON.stringify(updated));
+      // const existing = JSON.parse(localStorage.getItem("orders")) || [];
+      // const updated = [...existing, orderId];
 
-    setOrderCount(updated.length);
+      // localStorage.setItem("orders", JSON.stringify(updated));
+      const allOrders = JSON.parse(localStorage.getItem("orders")) || {};
 
-    setShowSuccess(true);
+      const cafeOrders = allOrders[cafeId] || [];
 
-    setCart([]);
-    setSelectedOptions({});
-    loadMenu("");
-    setShowCart(false);
+      const updatedCafeOrders = [...cafeOrders, orderId];
 
-  } catch (error) {
-    console.log(error);
-    throw error; // 🔥 VERY IMPORTANT
-  }
-};
+      allOrders[cafeId] = updatedCafeOrders;
+
+      localStorage.setItem("orders", JSON.stringify(allOrders));
+      
+
+      setOrderCount(updatedCafeOrders .length);
+      // setOrderCount(updated.length);
+
+      setShowSuccess(true);
+
+      setCart([]);
+      setSelectedOptions({});
+      loadMenu("");
+      setShowCart(false);
+    } catch (error) {
+      console.log(error);
+      throw error; // 🔥 VERY IMPORTANT
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 font-sans">
@@ -125,7 +188,7 @@ const Menu = () => {
         onClose={() => setShowSuccess(false)}
       />
 
-      {/* 🔥 TABLE SELECTOR */} 
+      {/* 🔥 TABLE SELECTOR */}
       {!tableNumber && (
         <div className="max-w-7xl mx-auto mt-4">
           <div className="bg-yellow-100 p-4 rounded">
@@ -157,7 +220,7 @@ const Menu = () => {
       <div className="fixed top-6 right-6 flex gap-2 z-50">
         {orderCount > 0 && (
           <button
-            onClick={() => navigate("/status")}
+            onClick={() => navigate(`/status?cafe=${cafeId}&table=${tableNumber}`)}
             className="bg-white border px-4 py-2 rounded-full shadow"
           >
             📦 Orders ({orderCount})
@@ -208,7 +271,7 @@ const Menu = () => {
       {showSuccess && (
         <div className="fixed bottom-6 right-6 z-50">
           <button
-            onClick={() => navigate("/status")}
+            onClick={() => navigate(`/status?cafe=${cafeId}&table=${tableNumber}`)}
             className="bg-blue-500 text-white px-4 py-2 rounded-full shadow"
           >
             Track Order →

@@ -3,10 +3,11 @@ const router = express.Router();
 const Order = require("../models/Order");
 const DEFAULT_CAFE_ID = "69e0da3fc53d76f3adcf4da8";
 const mongoose = require("mongoose");
+const auth = require("../middleware/auth");
 
 router.post("/", async (req, res) => {
   try {
-    const { items, tableNumber } = req.body;
+    const { items, tableNumber, cafeId } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: "No items in order" });
@@ -27,7 +28,7 @@ router.post("/", async (req, res) => {
     }, 0);
 
     const newOrder = new Order({
-      cafeId: new mongoose.Types.ObjectId(DEFAULT_CAFE_ID),
+      cafeId: new mongoose.Types.ObjectId(cafeId),
       items,
       total,
       tableNumber, // ✅ now valid
@@ -50,9 +51,9 @@ router.post("/", async (req, res) => {
 });
 
 // Get all orders
-router.get("/", async (req, res) => {
+router.get("/admin", auth, async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await Order.find({cafeId: req.cafeId}).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -60,7 +61,7 @@ router.get("/", async (req, res) => {
 });
 
 // Update order
-router.put("/:id", async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -68,7 +69,7 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ error: "Status is required" });
     }
 
-    await Order.findByIdAndUpdate(req.params.id, { status });
+    await Order.findByIdAndUpdate({_id:req.params.id,  cafeId: req.cafeId}, { status });
 
     res.json({ message: "Order updated" });
   } catch (err) {
@@ -77,9 +78,9 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete order
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
-    await Order.findByIdAndDelete(req.params.id);
+    await Order.findByIdAndDelete({ _id: req.params.id, cafeId: req.cafeId });
     res.json({ message: "Order deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

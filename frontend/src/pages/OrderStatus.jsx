@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import EmptyState from "../components/EmptyState";
 import API from "../api/api";
 
 const OrderStatus = () => {
   const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+
+  const cafeId = params.get("cafe");
+  const tableNumber = params.get("table");
 
   useEffect(() => {
     document.title = "Your Orders | My Cafe";
@@ -13,9 +17,12 @@ const OrderStatus = () => {
 
   const fetchOrders = async () => {
     try {
-      const orderIds = JSON.parse(localStorage.getItem("orders")) || [];
+      const allOrders =
+        JSON.parse(localStorage.getItem("orders")) || {};
 
-      if (orderIds.length === 0) {
+      const orderIds = allOrders[cafeId] || [];
+
+      if (!orderIds.length) {
         setOrders([]);
         return;
       }
@@ -24,17 +31,23 @@ const OrderStatus = () => {
         orderIds.map((id) =>
           API.get(`/order/${id}`)
             .then((res) => res.data)
-            .catch(() => null),
-        ),
+            .catch(() => null)
+        )
       );
 
       const validOrders = results.filter(Boolean);
-
       setOrders(validOrders);
 
-      // ✅ Keep only valid IDs
+      // ✅ FIXED STORAGE (per cafe)
       const validIds = validOrders.map((o) => o._id);
-      localStorage.setItem("orders", JSON.stringify(validIds));
+
+      const updatedOrders = {
+        ...allOrders,
+        [cafeId]: validIds,
+      };
+
+      localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
     } catch (err) {
       console.error("Error fetching orders:", err);
     }
@@ -42,28 +55,39 @@ const OrderStatus = () => {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 4000); // faster refresh
+
+    const interval = setInterval(fetchOrders, 4000);
     return () => clearInterval(interval);
   }, []);
 
   // 🔥 Auto remove completed orders after 10 sec
   useEffect(() => {
     const completedOrders = orders.filter(
-      (o) => (o.status || "").toLowerCase() === "completed",
+      (o) => (o.status || "").toLowerCase() === "completed"
     );
 
     if (completedOrders.length === 0) return;
 
     const timer = setTimeout(() => {
       const remaining = orders.filter(
-        (o) => (o.status || "").toLowerCase() !== "completed",
+        (o) => (o.status || "").toLowerCase() !== "completed"
       );
 
       setOrders(remaining);
 
       const remainingIds = remaining.map((o) => o._id);
-      localStorage.setItem("orders", JSON.stringify(remainingIds));
-    }, 10000); // 10 sec
+
+      const allOrders =
+        JSON.parse(localStorage.getItem("orders")) || {};
+
+      const updatedOrders = {
+        ...allOrders,
+        [cafeId]: remainingIds,
+      };
+
+      localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+    }, 10000);
 
     return () => clearTimeout(timer);
   }, [orders]);
@@ -71,12 +95,9 @@ const OrderStatus = () => {
   const getStatusUI = (status) => {
     const s = (status || "").toLowerCase();
 
-    if (s === "completed") {
-      return "bg-green-500";
-    }
-    if (s === "preparing") {
-      return "bg-yellow-500 animate-pulse";
-    }
+    if (s === "completed") return "bg-green-500";
+    if (s === "preparing") return "bg-yellow-500 animate-pulse";
+
     return "bg-gray-400";
   };
 
@@ -86,9 +107,10 @@ const OrderStatus = () => {
         <div className="flex justify-between items-center mb-5">
           <h1 className="text-2xl font-bold">🧾 Your Orders</h1>
 
-          {/* 🔥 Back to Menu */}
           <button
-            onClick={() => navigate("/")}
+            onClick={() =>
+              navigate(`/?cafe=${cafeId}&table=${tableNumber}`)
+            }
             className="bg-black text-white px-4 py-2 rounded-full shadow"
           >
             ← Menu
@@ -106,17 +128,19 @@ const OrderStatus = () => {
               key={order._id}
               className="bg-white rounded-2xl shadow p-5 mb-5"
             >
-              {/* Order ID */}
               <p className="text-sm text-gray-500 mb-2">
                 Order ID: #{order._id.slice(-6)}
               </p>
 
-              {/* Items */}
               {order.items.map((item, i) => {
                 const extras =
-                  item.selectedOptions?.reduce((s, o) => s + o.price, 0) || 0;
+                  item.selectedOptions?.reduce(
+                    (s, o) => s + o.price,
+                    0
+                  ) || 0;
 
-                const itemTotal = (item.price + extras) * item.qty;
+                const itemTotal =
+                  (item.price + extras) * item.qty;
 
                 return (
                   <div key={i} className="mb-2">
@@ -128,7 +152,10 @@ const OrderStatus = () => {
                     </div>
 
                     {item.selectedOptions?.map((opt, idx) => (
-                      <p key={idx} className="text-sm text-gray-500 ml-2">
+                      <p
+                        key={idx}
+                        className="text-sm text-gray-500 ml-2"
+                      >
                         + {opt.name} (₹{opt.price})
                       </p>
                     ))}
@@ -136,23 +163,20 @@ const OrderStatus = () => {
                 );
               })}
 
-              {/* Total */}
               <div className="flex justify-between font-bold mt-3">
                 <span>Total</span>
                 <span>₹{order.total}</span>
               </div>
 
-              {/* Status */}
               <div className="mt-4 flex items-center justify-between">
                 <span
                   className={`px-4 py-1 rounded-full text-white text-sm ${getStatusUI(
-                    order.status,
+                    order.status
                   )}`}
                 >
                   {order.status || "pending"}
                 </span>
 
-                {/* 🔥 Dynamic Message */}
                 {(order.status || "").toLowerCase() === "completed" && (
                   <span className="text-green-600 text-sm font-medium">
                     ✅ Ready!
@@ -160,7 +184,9 @@ const OrderStatus = () => {
                 )}
 
                 {(order.status || "").toLowerCase() === "preparing" && (
-                  <span className="text-yellow-600 text-sm">👨‍🍳 Cooking...</span>
+                  <span className="text-yellow-600 text-sm">
+                    👨‍🍳 Cooking...
+                  </span>
                 )}
               </div>
             </div>
