@@ -1,7 +1,7 @@
 const TableSelector = ({ tableNumber, setTableNumber }) => {
   if (tableNumber) {
     return (
-      <div className="max-w-7xl mx-auto mt-4">
+      <div className="max-w-7xl mx-auto mt-0">
         <div className="bg-green-100 p-2 rounded text-sm font-medium">
           Table #{tableNumber}
         </div>

@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://cafeproject-nn33.onrender.com");
+const socket = io(import.meta.env.VITE_SOCKET_URL);
 
 export default socket;

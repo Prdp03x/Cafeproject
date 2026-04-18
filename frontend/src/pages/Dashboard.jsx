@@ -4,9 +4,11 @@ import API from "../api/api";
 import OrderCard from "../components/Dashboard/OrderCard";
 import LogoutBtn from "../components/Common/LogoutBtn";
 import socket from "../socket";
+import { useNavigate } from "react-router";
 
 const Dashboard = () => {
   const { orders, setOrders, newOrderIds, fetchOrders } = useOrders();
+  const navigate = useNavigate();
 
   const cafe = JSON.parse(localStorage.getItem("cafe") || "null");
 
@@ -26,7 +28,7 @@ const Dashboard = () => {
 
     socket.on("orderUpdated", ({ id, status }) => {
       setOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, status } : o))
+        prev.map((o) => (o._id === id ? { ...o, status } : o)),
       );
     });
 
@@ -58,10 +60,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-6">
       <div className="max-w-7xl mx-auto space-y-6">
-
         {/* 🔝 Top Header */}
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-
           {/* Cafe Info */}
           <div>
             <h2 className="text-2xl font-semibold">
@@ -74,9 +74,15 @@ const Dashboard = () => {
           <LogoutBtn />
         </div>
 
+        <button
+          onClick={() => navigate("/dashboard/menu")}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          Manage Menu
+        </button>
+
         {/* 📊 Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
           <div className="bg-white rounded-2xl p-4 shadow-sm border">
             <p className="text-sm text-gray-500">Total Orders</p>
             <h3 className="text-2xl font-bold">{orders.length}</h3>
@@ -85,39 +91,34 @@ const Dashboard = () => {
           <div className="bg-white rounded-2xl p-4 shadow-sm border">
             <p className="text-sm text-gray-500">Pending</p>
             <h3 className="text-2xl font-bold">
-              {orders.filter(o => o.status === "pending").length}
+              {orders.filter((o) => o.status === "pending").length}
             </h3>
           </div>
 
           <div className="bg-white rounded-2xl p-4 shadow-sm border">
             <p className="text-sm text-gray-500">Completed</p>
             <h3 className="text-2xl font-bold">
-              {orders.filter(o => o.status === "completed").length}
+              {orders.filter((o) => o.status === "completed").length}
             </h3>
           </div>
 
           <div className="bg-white rounded-2xl p-4 shadow-sm border">
             <p className="text-sm text-gray-500">Cancelled</p>
             <h3 className="text-2xl font-bold">
-              {orders.filter(o => o.status === "cancelled").length}
+              {orders.filter((o) => o.status === "cancelled").length}
             </h3>
           </div>
-
         </div>
 
         {/* 🧾 Section Title */}
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">
-            Kitchen Orders
-          </h1>
+          <h1 className="text-2xl font-semibold">Kitchen Orders</h1>
         </div>
 
         {/* 📦 Orders */}
         {orders.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center shadow-sm border">
-            <p className="text-gray-400 text-lg">
-              No orders yet 🍽️
-            </p>
+            <p className="text-gray-400 text-lg">No orders yet 🍽️</p>
             <p className="text-sm text-gray-400 mt-2">
               Orders will appear here in real-time
             </p>
@@ -135,7 +136,6 @@ const Dashboard = () => {
             ))}
           </div>
         )}
-
       </div>
     </div>
   );

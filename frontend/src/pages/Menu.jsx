@@ -115,7 +115,7 @@ const Menu = () => {
           />
           {/* Title */}
           <div>
-            <p className="text-md text-gray-800 -mb-3 mt-4">Our Food</p>
+            <p className="text-md font-semibold text-gray-400 -mb-3 mt-4">Our Food</p>
             <div className="flex justify-between items-center my-4">
               <h1 className="text-3xl font-semibold text-green-700 tracking-tight">
                 Special For You

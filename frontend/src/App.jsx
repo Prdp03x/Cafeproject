@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import GoogleSuccess from "./pages/GoogleSuccess";
 import Signup from "./pages/Signup";
+import AdminPanel from "./pages/AdminPanel";
 
 
 
@@ -24,6 +25,7 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
           } />
+          <Route path="/dashboard/menu" element={<AdminPanel />} />
           <Route path="/google-success" element={<GoogleSuccess />} />
         <Route path="/status" element={<OrderStatus />} />
       </Routes>
