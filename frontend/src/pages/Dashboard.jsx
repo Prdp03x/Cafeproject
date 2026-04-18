@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import useOrders from "../hooks/useOrders";
 import API from "../api/api";
 import OrderCard from "../components/Dashboard/OrderCard";
-import LogoutBtn from "../components/common/LogoutBtn";
+import LogoutBtn from "../components/Common/LogoutBtn";
 import socket from "../socket";
 
 const Dashboard = () => {
