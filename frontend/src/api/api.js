@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  //  baseURL: "https://selfserviceorder-1.onrender.com/api"
-  baseURL: "http://localhost:5000/api"
+   baseURL: "https://cafeproject-nn33.onrender.com/api"
+  // baseURL: "http://localhost:5000/api"
 });
 
 export const signup = (data) => API.post("/auth/signup", data);
