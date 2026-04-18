@@ -35,32 +35,37 @@ const useCart = () => {
     });
   };
 
-  const addToCart = (item) => {
-    const extras = selectedOptions[item._id] || {};
-    const selectedExtras = Object.values(extras).flat();
+  const addToCart = (item, quantity = 1, modalOptions = {}) => {
+  const extras = modalOptions[item._id] || {};
+  const selectedExtras = Object.values(extras).flat();
 
-    const existing = cart.find(
-      (i) =>
-        i._id === item._id &&
-        JSON.stringify(i.selectedOptions) === JSON.stringify(selectedExtras)
-    );
+  const uniqueKey = item._id + selectedExtras.map((o) => o.name).sort().join("-");
 
-    if (existing) {
-      setCart(cart.map((i) =>
-        i === existing ? { ...i, qty: i.qty + 1 } : i
-      ));
-    } else {
-      setCart([
-        ...cart,
-        { ...item, qty: 1, selectedOptions: selectedExtras },
-      ]);
-    }
+  const existing = cart.find(
+  (i) => i.uniqueKey === uniqueKey
+);
 
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [item._id]: {},
-    }));
-  };
+if (existing) {
+  setCart(
+    cart.map((i) =>
+      i.uniqueKey === uniqueKey
+        ? { ...i, qty: i.qty + quantity }
+        : i
+    )
+  );
+} else {
+  setCart([
+    ...cart,
+    {
+      ...item,
+      qty: quantity,
+      selectedOptions: selectedExtras,
+      uniqueKey, // 🔥 store it
+    },
+  ]);
+}
+};
+
 
   const total = cart.reduce((sum, item) => {
     const extras =
@@ -69,16 +74,15 @@ const useCart = () => {
     return sum + (item.price + extras) * item.qty;
   }, 0);
 
-  const removeFromCart = (itemToRemove) => {
+  const removeFromCart = (item) => {
   setCart((prev) =>
-    prev.filter(
-      (item) =>
-        !(
-          item._id === itemToRemove._id &&
-          JSON.stringify(item.selectedOptions) ===
-            JSON.stringify(itemToRemove.selectedOptions)
-        )
-    )
+    prev
+      .map((i) =>
+        i.uniqueKey === item.uniqueKey
+          ? { ...i, qty: i.qty - 1 }
+          : i
+      )
+      .filter((i) => i.qty > 0)
   );
 };
 

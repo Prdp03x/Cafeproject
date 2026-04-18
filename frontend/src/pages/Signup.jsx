@@ -1,41 +1,52 @@
 import { useState } from "react";
-import API from "../api/api";
-import { useNavigate } from "react-router";
-import GoogleLoginButton from "../components/Common/GoogleLoginButton";
-import { HiOutlineMail, HiOutlineLockClosed } from "react-icons/hi";
+import { HiOutlineMail, HiOutlineLockClosed, HiOutlineUser } from "react-icons/hi";
+import { signup } from "../api/api";
 
-const Login = () => {
-  const navigate = useNavigate();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const Signup = () => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  // Handle input change
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Handle signup
+  const handleSignup = async () => {
     setError("");
 
-    if (!email || !password) {
+    if (!form.name || !form.email || !form.password) {
       return setError("All fields are required");
     }
 
     try {
       setLoading(true);
 
-      const res = await API.post("/auth/login", {
-        email,
-        password,
-      });
+      const res = await signup(form);
 
-      // 🔥 Store token
+      // 🔥 Auto login
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("cafe", JSON.stringify(res.data.cafe));
 
-      navigate("/dashboard");
+      window.location.href = "/dashboard";
 
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      const message = err.response?.data?.error;
+
+      if (message === "Email already exists") {
+        setError("Account already exists. Please login.");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+      } else {
+        setError(message || "Signup failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -47,18 +58,30 @@ const Login = () => {
 
         {/* Title */}
         <h2 className="text-2xl font-semibold text-center">
-          Welcome Back
+          Create Your Cafe
         </h2>
+
+        {/* Name */}
+        <div className="flex items-center bg-gray-100 px-4 py-3 rounded-full focus-within:ring-2 focus-within:ring-gray-300">
+          <HiOutlineUser className="text-gray-500 mr-3" size={20} />
+          <input
+            type="text"
+            name="name"
+            placeholder="Cafe Name"
+            onChange={handleChange}
+            className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-400"
+          />
+        </div>
 
         {/* Email */}
         <div className="flex items-center bg-gray-100 px-4 py-3 rounded-full focus-within:ring-2 focus-within:ring-gray-300">
           <HiOutlineMail className="text-gray-500 mr-3" size={20} />
           <input
             type="email"
+            name="email"
             placeholder="Email"
+            onChange={handleChange}
             className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-400"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
@@ -67,10 +90,10 @@ const Login = () => {
           <HiOutlineLockClosed className="text-gray-500 mr-3" size={20} />
           <input
             type="password"
+            name="password"
             placeholder="Password"
+            onChange={handleChange}
             className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-400"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
@@ -81,33 +104,23 @@ const Login = () => {
           </p>
         )}
 
-        {/* Login Button */}
+        {/* Button */}
         <button
-          onClick={handleLogin}
+          onClick={handleSignup}
           disabled={loading}
           className="w-full bg-black text-white py-3 rounded-full hover:bg-gray-800 transition"
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Creating account..." : "Sign Up"}
         </button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-sm text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {/* Google Login */}
-        <GoogleLoginButton />
 
         {/* Redirect */}
         <p className="text-center text-sm text-gray-500">
-          Don’t have an account?{" "}
+          Already have an account?{" "}
           <span
-            onClick={() => navigate("/signup")}
+            onClick={() => (window.location.href = "/login")}
             className="text-black font-medium cursor-pointer"
           >
-            Sign up
+            Login
           </span>
         </p>
 
@@ -116,4 +129,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;

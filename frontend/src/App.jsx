@@ -4,6 +4,9 @@ import Dashboard from "./pages/Dashboard";
 import OrderStatus from "./pages/OrderStatus";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import GoogleSuccess from "./pages/GoogleSuccess";
+import Signup from "./pages/Signup";
+
 
 
 
@@ -12,14 +15,16 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Menu />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route 
             path="/dashboard" 
             element={
-          <ProtectedRoute>
+              <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
           } />
+          <Route path="/google-success" element={<GoogleSuccess />} />
         <Route path="/status" element={<OrderStatus />} />
       </Routes>
     </BrowserRouter>

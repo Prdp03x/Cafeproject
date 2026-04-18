@@ -6,7 +6,6 @@ const useLogout = () => {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("cafe");
-
     navigate("/login");
   };
 

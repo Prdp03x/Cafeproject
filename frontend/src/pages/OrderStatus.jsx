@@ -12,6 +12,8 @@ const OrderStatus = () => {
   const cafeId = params.get("cafe");
   const tableNumber = params.get("table");
 
+  const sessionId = localStorage.getItem("sessionId");
+
   useEffect(() => {
     document.title = "Your Orders | My Cafe";
   }, []);
@@ -36,7 +38,7 @@ const OrderStatus = () => {
       return;
     }
 
-    const res = await API.get(`/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}`);
+    const res = await API.get(`/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}&sessionId=${sessionId}`);
 
     setOrders(res.data);
 

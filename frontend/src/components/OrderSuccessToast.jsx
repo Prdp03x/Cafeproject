@@ -21,7 +21,7 @@ const OrderSuccessToast = ({ show, onClose }) => {
             : "opacity-0 scale-90 pointer-events-none"
         }`}
     >
-      <div className="bg-blue-600 font-light text-sm text-white px-6 py-3 rounded-full shadow-xl">
+      <div className="bg-green-700 font-light text-sm text-white px-6 py-3 rounded-full shadow-xl whitespace-nowrap">
         Order placed successfully!
       </div>
     </div>

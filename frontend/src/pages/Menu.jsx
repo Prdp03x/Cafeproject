@@ -1,47 +1,52 @@
-import { useSearchParams } from "react-router";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { FiSearch } from "react-icons/fi";
+
+import Header from "../components/Common/Header";
 import OrderSuccessToast from "../components/OrderSuccessToast";
 import CategoryFilter from "../components/Menu/CategoryFilter";
 import MenuCard from "../components/Menu/MenuCard";
 import CartSidebar from "../components/Cart/CartSidebar";
+
+import TableSelector from "../components/TableSelector";
+import TopActions from "../components/TopActions";
+
 import useMenu from "../hooks/useMenu";
 import useCart from "../hooks/useCart";
+import useSession from "../hooks/useSession";
+import useSocket from "../hooks/useSocket";
+import useOrderCount from "../hooks/useOrderCount";
+import ItemModel from "../components/Menu/ItemModel";
+
 import API from "../api/api";
-import Header from "../components/Common/Header";
 
 const Menu = () => {
   const navigate = useNavigate();
-  // UseState Hooks
-  const [showCart, setShowCart] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [orderCount, setOrderCount] = useState(0);
-  // UseSearchParam Hooks
+
   const [params] = useSearchParams();
-  const tableFromURL = params.get("table");
   const cafeId = params.get("cafe");
-
-  useEffect(() => {
-  if (cafeId) {
-    localStorage.setItem("cafeId", cafeId);
-  }
-
-  if (tableFromURL) {
-    localStorage.setItem("tableNumber", tableFromURL);
-  }
-}, [cafeId, tableFromURL]);
-
+  const tableFromURL = params.get("table");
 
   const [tableNumber, setTableNumber] = useState(
-    tableFromURL ? Number(tableFromURL) : null,
-  ); 
+    tableFromURL ? String(tableFromURL) : null,
+  );
 
-  const { menu, categories, selectedCategory, loadMenu } = useMenu();
+  const [showCart, setShowCart] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [cafe, setCafe] = useState(null);
 
+  // 🔥 SEARCH STATE
+  const [search, setSearch] = useState("");
+
+  useSession();
+  useSocket(cafeId);
+
+  const orderCount = useOrderCount(cafeId, tableNumber);
+
+  const { menu, categories, selectedCategory, loadMenu } = useMenu(cafeId);
   const {
     cart,
-    selectedOptions,
-    handleOptionChange,
     addToCart,
     removeFromCart,
     total,
@@ -50,182 +55,159 @@ const Menu = () => {
   } = useCart();
 
   useEffect(() => {
-    document.title = "Menu | My Cafe";
-  }, []);
+    if (!cafeId) return;
+
+    const fetchCafe = async () => {
+      try {
+        const res = await API.get(`/cafes/${cafeId}`);
+        setCafe(res.data);
+      } catch (err) {
+        console.error("Cafe not found");
+        setCafe({ name: "Cafe" }); // fallback
+      }
+    };
+
+    fetchCafe();
+  }, [cafeId]);
 
   useEffect(() => {
-  const fetchOrderCount = async () => {
-    if (!cafeId || !tableNumber) return;
-
-    try {
-      const res = await API.get(
-        `/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}`
-      );
-
-      setOrderCount(res.data.length);
-    } catch (err) {
-      console.log(err);
+    if (cafe?.name) {
+      document.title = `${cafe.name} | Menu`;
     }
-  };
+  }, [cafe]);
 
-  fetchOrderCount();
-}, [cafeId, tableNumber]);
+  // 🔥 FILTER MENU
+  const filteredMenu = menu.filter((item) =>
+    item.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
-  // 🔥 PLACE ORDER
   const placeOrder = async () => {
-    if (cart.length === 0) return;
+    const sessionId = localStorage.getItem("sessionId");
 
-    if (!tableNumber) {
-      throw new Error("Table not selected"); // ✅ THROW
-    }
+    await API.post("/orders", {
+      items: cart,
+      total,
+      tableNumber,
+      cafeId,
+      sessionId,
+    });
 
-    if (!cafeId) {
-      alert("Invalid QR / Cafe not found");
-      return;
-    }
-
-    try {
-      const res = await API.post("/orders", {
-        items: cart,
-        total,
-        tableNumber,
-        status: "pending",
-        cafeId,
-      });
-
-      const orderId = res.data.orderId;
-
-      const allOrders = JSON.parse(localStorage.getItem("orders")) || {};
-
-      const cafeOrders = allOrders[cafeId] || [];
-
-      const updatedCafeOrders = [...cafeOrders, orderId];
-
-      allOrders[cafeId] = updatedCafeOrders;
-
-      localStorage.setItem("orders", JSON.stringify(allOrders));
-      
-
-      setOrderCount(updatedCafeOrders .length);
-
-      setShowSuccess(true);
-
-      setCart([]);
-      setSelectedOptions({});
-      loadMenu("");
-      setShowCart(false);
-    } catch (error) {
-      console.log(error);
-      throw error; // 🔥 VERY IMPORTANT
-    }
+    setShowSuccess(true);
+    setCart([]);
+    setSelectedOptions({});
+    setShowCart(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 font-sans">
-      <Header
-        brand={{
-          name: "Cafe Delight",
-          logo: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=600",
-          primaryColor: "#ccc",
-        }}
-        cartCount={cart.length}
-      />
+    <div className="min-h-screen bg-gray-50 font-poppins">
+      {/* 🔝 Sticky Top */}
+      <div className="sticky p-4 pb-0 top-0 z-50 bg-gray-50 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="max-w-7xl mx-auto">
+          <Header
+            brand={{ name: cafe?.name || "Cafe Delight" }}
+            cartCount={cart.reduce((sum, item) => sum + item.qty, 0)}
+            onCartClick={() => setShowCart(true)}
+          />
 
+          {/* Title */}
+          <div>
+            <p className="text-md text-gray-800 -mb-3 mt-4">Our Food</p>
+            <div className="flex justify-between items-center my-4">
+              <h1 className="text-3xl font-semibold text-green-700 tracking-tight">
+                Special For You
+              </h1>
+              <span className="text-sm text-gray-500">
+                {filteredMenu.length} items
+              </span>
+            </div>
+          </div>
+
+          {/* 🔍 Search Bar */}
+          <div className="pb-2">
+            <div className="flex items-center bg-gray-200 rounded-lg px-4 py-2 focus-within:ring-2 focus-within:ring-green-800">
+              <FiSearch className="text-gray-400 mr-2" />
+              <input
+                type="text"
+                placeholder="Search food..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div className="p-3 overflow-x-auto scrollbar-hide scroll-smooth">
+            <div className="flex gap-3 min-w-max">
+              <CategoryFilter
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelect={loadMenu}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast */}
       <OrderSuccessToast
         show={showSuccess}
         onClose={() => setShowSuccess(false)}
       />
 
-      {/* 🔥 TABLE SELECTOR */}
-      {!tableNumber && (
-        <div className="max-w-7xl mx-auto mt-4">
-          <div className="bg-yellow-100 p-4 rounded">
-            <p className="mb-2 font-medium">Please select your table number</p>
-
-            <div className="flex flex-wrap gap-2">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setTableNumber(String(num))}
-                  className="px-4 py-2 bg-black text-white rounded"
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tableNumber && (
-        <div className="max-w-7xl mx-auto mt-4">
-          <div className="bg-green-100 p-2 rounded text-sm font-medium">
-            Table #{tableNumber}
-          </div>
-        </div>
-      )}
-      {/* 🔥 TOP BUTTONS */}
-      <div className="fixed top-6 right-6 flex gap-2 z-50">
-        {orderCount > 0 && (
-          <button
-            onClick={() => navigate(`/status?cafe=${cafeId}&table=${tableNumber}`)}
-            className="bg-white border px-4 py-2 rounded-full shadow"
-          >
-            📦 Orders ({orderCount})
-          </button>
-        )}
-
-        {cart.length > 0 && (
-          <button
-            onClick={() => setShowCart(true)}
-            className="bg-black text-white px-4 py-2 rounded-full shadow"
-          >
-            🛒 Cart ({cart.length})
-          </button>
-        )}
-      </div>
-
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6 text-gray-800">🍽️ Our Menu</h1>
-
-        <CategoryFilter
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelect={loadMenu}
+      {/* Actions */}
+      <div className="p-4">
+        <TopActions
+          orderCount={orderCount}
+          cartLength={cart.reduce((sum, item) => sum + item.qty, 0)}
+          navigate={navigate}
+          cafeId={cafeId}
+          tableNumber={tableNumber}
+          setShowCart={setShowCart}
         />
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {menu.map((item) => (
-            <MenuCard
-              key={item._id}
-              item={item}
-              selectedOptions={selectedOptions}
-              handleOptionChange={handleOptionChange}
-              addToCart={addToCart}
-            />
-          ))}
+        {/* Menu Grid */}
+        <div className="max-w-7xl mx-auto">
+          {menu.length === 0 ? (
+            <div className="text-center mt-20">
+              <p className="text-gray-400 text-lg">No items available 🍽️</p>
+              <p className="text-sm text-gray-500 mt-2">
+                This cafe hasn’t added menu yet
+              </p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredMenu.map((item) => (
+                <MenuCard
+                  key={item._id}
+                  item={item}
+                  onClick={() => setSelectedItem(item)}
+                />
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Cart */}
+        <CartSidebar
+          cart={cart}
+          total={total}
+          showCart={showCart}
+          setShowCart={setShowCart}
+          placeOrder={placeOrder}
+          removeFromCart={removeFromCart}
+          addToCart={addToCart}
+        />
+
+        {/* Modal */}
+        {selectedItem && (
+          <ItemModel
+            item={selectedItem}
+            onClose={() => setSelectedItem(null)}
+            addToCart={addToCart}
+          />
+        )}
       </div>
-
-      <CartSidebar
-        cart={cart}
-        total={total}
-        showCart={showCart}
-        setShowCart={setShowCart}
-        placeOrder={placeOrder}
-        removeFromCart={removeFromCart}
-      />
-
-      {showSuccess && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <button
-            onClick={() => navigate(`/status?cafe=${cafeId}&table=${tableNumber}`)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-full shadow"
-          >
-            Track Order →
-          </button>
-        </div>
-      )}
     </div>
   );
 };

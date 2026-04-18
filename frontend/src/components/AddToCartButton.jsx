@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-const AddToCartButton = ({ item, addToCart }) => {
+const AddToCartButton = ({ item, selectedOptions, quantity, addToCart }) => {
   const [added, setAdded] = useState(false);
 
   const handleClick = () => {
-    addToCart(item);
+    addToCart(item, selectedOptions, quantity);;
 
     // 🔥 Trigger animation
     setAdded(true);

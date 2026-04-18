@@ -1,142 +1,32 @@
 const express = require("express");
 const router = express.Router();
-const Order = require("../models/Order");
-const DEFAULT_CAFE_ID = "69e0da3fc53d76f3adcf4da8";
-const mongoose = require("mongoose");
 const auth = require("../middleware/auth");
 
-router.post("/", async (req, res) => {
-  try {
-    const { items, tableNumber, cafeId } = req.body;
+const {
+  createOrder,
+  getAdminOrders,
+  getCustomerOrders,
+  updateOrder,
+  deleteOrder,
+  getOrderById,
+} = require("../controllers/orderController");
 
-    if (!items || items.length === 0) {
-      return res.status(400).json({ error: "No items in order" });
-    }
+// CREATE
+router.post("/", createOrder);
 
-    if (!tableNumber) {
-      return res.status(400).json({ error: "Table number required" });
-    }
+// ADMIN
+router.get("/admin", auth, getAdminOrders);
 
-    if (!mongoose.Types.ObjectId.isValid(cafeId)) {
-      return res.status(400).json({ error: "Invalid cafeId" });
-    }
+// CUSTOMER
+router.get("/customer", getCustomerOrders);
 
-    const total = items.reduce((sum, item) => {
-      const extras =
-        item.selectedOptions?.reduce((s, opt) => s + opt.price, 0) || 0;
+// UPDATE
+router.put("/:id", auth, updateOrder);
 
-      return sum + (item.price + extras) * item.qty;
-    }, 0);
+// DELETE
+router.delete("/:id", auth, deleteOrder);
 
-    const newOrder = new Order({
-      cafeId: new mongoose.Types.ObjectId(cafeId),
-      items,
-      total,
-      tableNumber: String(tableNumber), // ✅ now valid
-      status: "pending",
-    });
-
-    await newOrder.save();
-    
-    const io = req.app.get("io");
-
-    io.to(cafeId.toString()).emit("newOrder", newOrder);
-
-    res.json({
-      message: "Order placed",
-      orderId: newOrder._id,
-    });
-  } catch (err) {
-    console.error("🔥 ORDER ERROR:", err); // 👈 ADD THIS
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get all orders
-router.get("/admin", auth, async (req, res) => {
-  try {
-    const orders = await Order.find({ cafeId: req.cafeId }).sort({
-      createdAt: -1,
-    });
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ CUSTOMER - Get orders by cafeId + tableNumber
-router.get("/customer", async (req, res) => {
-  try {
-    const { cafeId, tableNumber } = req.query;
-
-    if (!cafeId || !tableNumber) {
-      return res.status(400).json({ error: "Missing cafeId or tableNumber" });
-    }
-
-    const orders = await Order.find({
-      cafeId: new mongoose.Types.ObjectId(cafeId),
-      tableNumber: String(tableNumber),
-    }).sort({ createdAt: -1 });
-
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update order
-router.put("/:id", auth, async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({ error: "Status is required" });
-    }
-
-    const io = req.app.get("io");
-
-    await Order.findByIdAndUpdate(
-      { _id: req.params.id, cafeId: req.cafeId },
-      { status },
-    );
-    // 🔥 EMIT UPDATE
-    io.to(req.cafeId.toString()).emit("orderUpdated", {
-      id: req.params.id,
-      status,
-    });
-
-    res.json({ message: "Order updated" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete order
-router.delete("/:id", auth, async (req, res) => {
-  try {
-    const io = req.app.get("io");
-    await Order.findByIdAndDelete({ _id: req.params.id, cafeId: req.cafeId });
-    // 🔥 EMIT DELETE
-    io.to(req.cafeId.toString()).emit("orderDeleted", req.params.id);
-    res.json({ message: "Order deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-//get Id details
-router.get("/:id", async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET SINGLE
+router.get("/:id", getOrderById);
 
 module.exports = router;

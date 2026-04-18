@@ -17,6 +17,11 @@ const menuSchema = new mongoose.Schema({
   image: String,
   category: String,
   options: [optionSchema],
+  cafeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Cafe",
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("Menu", menuSchema);

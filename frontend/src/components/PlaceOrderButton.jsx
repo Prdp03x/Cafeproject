@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FiArrowRight } from "react-icons/fi";
 
 const PlaceOrderButton = ({ placeOrder, disabled }) => {
   const [status, setStatus] = useState("idle");
@@ -27,13 +28,13 @@ const PlaceOrderButton = ({ placeOrder, disabled }) => {
   const getText = () => {
     if (status === "loading") return "Placing...";
     if (status === "success") return "Order Placed ✓";
-    return "Place Order 🚀";
+    return "Place Order";
   };
 
   const getStyle = () => {
-    if (status === "success") return "bg-green-500 scale-95";
+    if (status === "success") return "bg-green-800 scale-95";
     if (status === "loading") return "bg-gray-400 cursor-not-allowed";
-    return "bg-green-500 hover:bg-green-600";
+    return "bg-green-800 hover:bg-green-600";
   };
 
   return (
