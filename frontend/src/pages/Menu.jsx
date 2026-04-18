@@ -109,6 +109,10 @@ const Menu = () => {
             onCartClick={() => setShowCart(true)}
           />
 
+          <TableSelector
+            tableNumber={tableNumber}
+            setTableNumber={setTableNumber}
+          />
           {/* Title */}
           <div>
             <p className="text-md text-gray-800 -mb-3 mt-4">Our Food</p>
