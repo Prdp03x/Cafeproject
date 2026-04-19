@@ -1,12 +1,22 @@
-const TopActions = ({ orderCount, cartLength, navigate, cafeId, tableNumber, setShowCart }) => {
+const TopActions = ({
+  orderCount,
+  navigate,
+  cafeId,
+  tableNumber,
+}) => {
   return (
-    <div className="fixed bottom-6 right-1/2 translate-x-1/2 flex gap-2 z-50">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       {orderCount > 0 && (
         <button
-          onClick={() =>
-            navigate(`/status?cafe=${cafeId}&table=${tableNumber}`)
-          }
-          className="bg-white border px-4 py-2 rounded-full shadow whitespace-nowrap"
+          onClick={() => {
+            if (!tableNumber) {
+              alert("Please select your table");
+              return;
+            }
+
+            navigate(`/status?cafe=${cafeId}&table=${tableNumber}`);
+          }}
+          className="bg-white border px-6 py-3 rounded-full shadow-lg whitespace-nowrap hover:bg-gray-100 transition active:scale-95"
         >
           📦 Orders ({orderCount})
         </button>

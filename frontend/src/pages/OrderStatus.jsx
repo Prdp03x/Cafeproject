@@ -19,61 +19,71 @@ const OrderStatus = () => {
   }, []);
 
   useEffect(() => {
-  socket.emit("joinCafe", cafeId);
+    socket.emit("joinCafe", cafeId);
 
-  socket.on("orderUpdated", () => {
-    fetchOrders();
-  });
+    socket.on("orderUpdated", () => {
+      fetchOrders();
+    });
 
-  return () => {
-    socket.off("orderUpdated");
-  };
-}, [cafeId]);
+    return () => {
+      socket.off("orderUpdated");
+    };
+  }, [cafeId]);
 
   const fetchOrders = async () => {
-  try {
-    if (!cafeId || !tableNumber) {
-      console.warn("Missing cafeId or tableNumber");
+    try {
+      if (!cafeId || !tableNumber) {
+        console.warn("Missing cafeId or tableNumber");
+        setOrders([]);
+        return;
+      }
+
+      const res = await API.get(
+        `/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}&sessionId=${sessionId}`,
+      );
+
+      if (Array.isArray(res.data)) {
+        setOrders(res.data);
+      } else if (Array.isArray(res.data.orders)) {
+        setOrders(res.data.orders);
+      } else {
+        console.error("Invalid orders response:", res.data);
+        setOrders([]);
+      }
+    } catch (err) {
+      console.error("Error fetching orders:", err);
       setOrders([]);
-      return;
     }
-
-    const res = await API.get(`/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}&sessionId=${sessionId}`);
-
-    setOrders(res.data);
-
-  } catch (err) {
-    console.error("Error fetching orders:", err);
-    setOrders([]);
-  }
-};
+  };
 
   useEffect(() => {
+
+    if (!cafeId || !tableNumber) return; 
+
     fetchOrders();
 
     const interval = setInterval(fetchOrders, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [cafeId, tableNumber]);
 
   // 🔥 Auto remove completed orders after 10 sec
   useEffect(() => {
     const completedOrders = orders.filter(
-      (o) => (o.status || "").toLowerCase() === "completed"
+      (o) => (o.status || "").toLowerCase() === "completed",
     );
 
     if (completedOrders.length === 0) return;
 
     const timer = setTimeout(() => {
       const remaining = orders.filter(
-        (o) => (o.status || "").toLowerCase() !== "completed"
+        (o) => (o.status || "").toLowerCase() !== "completed",
       );
 
       setOrders(remaining);
 
       const remainingIds = remaining.map((o) => o._id);
 
-      const allOrders =
-        JSON.parse(localStorage.getItem("orders")) || {};
+      const allOrders = JSON.parse(localStorage.getItem("orders")) || {};
 
       const updatedOrders = {
         ...allOrders,
@@ -81,7 +91,6 @@ const OrderStatus = () => {
       };
 
       localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
     }, 10000);
 
     return () => clearTimeout(timer);
@@ -103,9 +112,7 @@ const OrderStatus = () => {
           <h1 className="text-2xl font-bold">🧾 Your Orders</h1>
 
           <button
-            onClick={() =>
-              navigate(`/?cafe=${cafeId}&table=${tableNumber}`)
-            }
+            onClick={() => navigate(`/?cafe=${cafeId}&table=${tableNumber}`)}
             className="bg-black text-white px-4 py-2 rounded-full shadow"
           >
             ← Menu
@@ -117,7 +124,7 @@ const OrderStatus = () => {
             title="No Active Orders"
             subtitle="Place your order from the menu 🍽️"
           />
-        ) : (
+        ) : (Array.isArray(orders) &&
           orders.map((order) => (
             <div
               key={order._id}
@@ -129,13 +136,9 @@ const OrderStatus = () => {
 
               {order.items.map((item, i) => {
                 const extras =
-                  item.selectedOptions?.reduce(
-                    (s, o) => s + o.price,
-                    0
-                  ) || 0;
+                  item.selectedOptions?.reduce((s, o) => s + o.price, 0) || 0;
 
-                const itemTotal =
-                  (item.price + extras) * item.qty;
+                const itemTotal = (item.price + extras) * item.qty;
 
                 return (
                   <div key={i} className="mb-2">
@@ -147,10 +150,7 @@ const OrderStatus = () => {
                     </div>
 
                     {item.selectedOptions?.map((opt, idx) => (
-                      <p
-                        key={idx}
-                        className="text-sm text-gray-500 ml-2"
-                      >
+                      <p key={idx} className="text-sm text-gray-500 ml-2">
                         + {opt.name} (₹{opt.price})
                       </p>
                     ))}
@@ -166,7 +166,7 @@ const OrderStatus = () => {
               <div className="mt-4 flex items-center justify-between">
                 <span
                   className={`px-4 py-1 rounded-full text-white text-sm ${getStatusUI(
-                    order.status
+                    order.status,
                   )}`}
                 >
                   {order.status || "pending"}
@@ -179,9 +179,7 @@ const OrderStatus = () => {
                 )}
 
                 {(order.status || "").toLowerCase() === "preparing" && (
-                  <span className="text-yellow-600 text-sm">
-                    👨‍🍳 Cooking...
-                  </span>
+                  <span className="text-yellow-600 text-sm">👨‍🍳 Cooking...</span>
                 )}
               </div>
             </div>

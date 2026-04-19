@@ -23,10 +23,11 @@ const AdminPanel = () => {
 
   const deleteItem = async (id) => {
     try {
+      setMenu((prev) => prev.filter((item) => item._id !== id));
       await API.delete(`/menu/${id}`);
-      fetchMenu();
     } catch (err) {
       console.error("Delete failed");
+      fetchMenu();
     }
   };
 

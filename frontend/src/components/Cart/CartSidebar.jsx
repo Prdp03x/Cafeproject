@@ -11,6 +11,7 @@ const CartSidebar = ({
   placeOrder,
   removeFromCart,
   addToCart,
+  tableNumber
 }) => {
   return (
     <div
@@ -89,7 +90,8 @@ const CartSidebar = ({
 
             <PlaceOrderButton
               placeOrder={placeOrder}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || !tableNumber}
+              tableNumber={tableNumber}
             />
           </div>
         )}

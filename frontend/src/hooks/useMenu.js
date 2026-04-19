@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import API from "../api/api";
 
 const useMenu = (cafeId) => {
   const [menu, setMenu] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!cafeId) return;
@@ -25,10 +26,11 @@ const useMenu = (cafeId) => {
   };
 
   // 🔥 Load menu by cafe + category
-  const loadMenu = async (category = "") => {
+  const loadMenu = useCallback (async (category = "") => {
     try {
-      let url = `/menu?cafeId=${cafeId}`;
+      setLoading(true);
 
+      let url = `/menu?cafeId=${cafeId}`;
       if (category) {
         url += `&category=${category}`;
       }
@@ -39,14 +41,17 @@ const useMenu = (cafeId) => {
       setSelectedCategory(category);
     } catch (err) {
       console.error("Failed to load menu");
+    } finally {
+      setLoading(false);
     }
-  };
+  },[cafeId]);
 
   return {
     menu,
     categories,
     selectedCategory,
     loadMenu,
+    loading
   };
 };
 

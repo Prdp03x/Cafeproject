@@ -17,6 +17,7 @@ import useSession from "../hooks/useSession";
 import useSocket from "../hooks/useSocket";
 import useOrderCount from "../hooks/useOrderCount";
 import ItemModel from "../components/Menu/ItemModel";
+import MenuSkeleton from "../components/Loader/MenuSkeleton";
 
 import API from "../api/api";
 
@@ -44,7 +45,8 @@ const Menu = () => {
 
   const orderCount = useOrderCount(cafeId, tableNumber);
 
-  const { menu, categories, selectedCategory, loadMenu } = useMenu(cafeId);
+  const { menu, categories, selectedCategory, loadMenu, loading } =
+    useMenu(cafeId);
   const {
     cart,
     addToCart,
@@ -92,6 +94,7 @@ const Menu = () => {
       sessionId,
     });
 
+    window.location.reload();
     setShowSuccess(true);
     setCart([]);
     setSelectedOptions({});
@@ -115,7 +118,9 @@ const Menu = () => {
           />
           {/* Title */}
           <div>
-            <p className="text-md font-semibold text-gray-400 -mb-3 mt-4">Our Food</p>
+            <p className="text-md font-semibold text-gray-400 -mb-3 mt-4">
+              Our Food
+            </p>
             <div className="flex justify-between items-center my-4">
               <h1 className="text-3xl font-semibold text-green-700 tracking-tight">
                 Special For You
@@ -172,7 +177,9 @@ const Menu = () => {
 
         {/* Menu Grid */}
         <div className="max-w-7xl mx-auto">
-          {menu.length === 0 ? (
+          {loading ? (
+            <MenuSkeleton/>
+          ) : filteredMenu.length === 0 ? (
             <div className="text-center mt-20">
               <p className="text-gray-400 text-lg">No items available 🍽️</p>
               <p className="text-sm text-gray-500 mt-2">
@@ -201,6 +208,7 @@ const Menu = () => {
           placeOrder={placeOrder}
           removeFromCart={removeFromCart}
           addToCart={addToCart}
+          tableNumber={tableNumber}
         />
 
         {/* Modal */}

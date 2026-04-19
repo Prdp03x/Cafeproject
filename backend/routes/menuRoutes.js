@@ -11,14 +11,19 @@ router.get("/", async (req, res) => {
     if (!cafeId) {
       return res.status(400).json({ error: "cafeId is required" });
     }
-
+    
     let filter = { cafeId };
 
     if (category) {
       filter.category = category;
     }
 
-    const items = await Menu.find(filter);
+    console.log("Incoming cafeId:", cafeId);
+console.log("Filter:", filter);
+
+const items = await Menu.find(filter);/////////////
+
+console.log("Items found:", items.length);
 
     res.json(items);
   } catch (err) {
@@ -50,6 +55,24 @@ router.post("/", async (req, res) => {
     await item.save();
 
     res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE ITEMS FROM MENU
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedItem = await Menu.findByIdAndDelete(id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ error: "Menu item not found" });
+    }
+
+    res.json({ message: "Item deleted successfully" });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
