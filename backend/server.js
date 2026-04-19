@@ -23,7 +23,7 @@ const server = http.createServer(app); // ✅ IMPORTANT
 // 🔥 SOCKET SETUP
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.CLIENT_URL || "http://localhost:5173/", // frontend url
   },
 });
 

@@ -1,9 +1,14 @@
 import axios from "axios";
 
-const API = axios.create({
-   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api"
-  // baseURL: "http://localhost:5000/api"
-});
+const baseURL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:5000/api" : null);
+
+if (!baseURL) {
+  throw new Error("❌ API URL missing in production");
+}
+
+const API = axios.create({ baseURL });
 
 export const signup = (data) => API.post("/auth/signup", data);
 export const login = (data) => API.post("/auth/login", data);
