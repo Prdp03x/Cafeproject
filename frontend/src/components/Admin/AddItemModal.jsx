@@ -13,10 +13,7 @@ const AddItemModal = ({ onClose, refresh }) => {
 
   // 🔥 Add new option group
   const addOptionGroup = () => {
-    setOptions([
-      ...options,
-      { title: "", type: "single", choices: [] }
-    ]);
+    setOptions([...options, { title: "", type: "single", choices: [] }]);
   };
 
   // 🔥 Add choice inside option
@@ -41,8 +38,16 @@ const AddItemModal = ({ onClose, refresh }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-      <div className="bg-white p-5 rounded-xl w-[400px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center" onClick={onClose}>
+      <div className="relative bg-white p-5 rounded-xl w-[400px] max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-gray-500 hover:text-black text-xl font-bold transition"
+        >
+          ✕
+        </button>
 
         <h2 className="text-xl font-bold mb-4">Add Item</h2>
 
@@ -77,7 +82,6 @@ const AddItemModal = ({ onClose, refresh }) => {
 
           {options.map((opt, i) => (
             <div key={i} className="border p-3 mb-3 rounded">
-
               <input
                 placeholder="Option Title (e.g. Size)"
                 className="w-full border p-1 mb-2"
@@ -132,7 +136,6 @@ const AddItemModal = ({ onClose, refresh }) => {
               >
                 + Add Choice
               </button>
-
             </div>
           ))}
 
@@ -151,7 +154,6 @@ const AddItemModal = ({ onClose, refresh }) => {
         >
           Save Item
         </button>
-
       </div>
     </div>
   );

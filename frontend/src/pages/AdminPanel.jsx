@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import AddItemModal from "../components/Admin/AddItemModal";
+import { useNavigate } from "react-router";
+import { FaArrowLeft, FaRegEdit } from "react-icons/fa";
+import { AiOutlineDelete } from "react-icons/ai";
 
 const AdminPanel = () => {
   const [menu, setMenu] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
   const fetchMenu = async () => {
     try {
@@ -33,7 +37,16 @@ const AdminPanel = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">🍽️ Manage Menu</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">🍽️ Manage Menu</h1>
+
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="text-md font-bold bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 flex items-center gap-2"
+        >
+          <FaArrowLeft /> Dashboard
+        </button>
+      </div>
 
       {/* Add Button */}
       <button
@@ -44,22 +57,44 @@ const AdminPanel = () => {
       </button>
 
       {/* Menu List */}
-      <div className="space-y-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {menu.map((item) => (
           <div
             key={item._id}
-            className="p-4 bg-white rounded shadow flex justify-between items-center"
+            className="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden"
           >
-            <div>
-              <p className="font-semibold">{item.name}</p>
-              <p className="text-sm text-gray-500">₹ {item.price}</p>
+            {/* 🍽️ Image */}
+            <div className="h-40 w-full overflow-hidden">
+              <img
+                src={item.image || "https://via.placeholder.com/300"}
+                alt={item.name}
+                className="w-full h-full object-cover hover:scale-105 transition"
+              />
             </div>
 
-            <div className="flex gap-2">
-              <button className="text-blue-500">Edit</button>
-              <button onClick={() => deleteItem(item._id)} className="text-red-500">
-                Delete
-              </button>
+            {/* 📦 Content */}
+            <div className="p-4 flex justify-between items-start">
+              <div>
+                <p className="font-semibold text-lg">{item.name}</p>
+                <p className="text-sm text-gray-500">₹ {item.price}</p>
+                <p className="text-xs text-gray-400 mt-1">{item.category}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                {/* ✏️ Edit */}
+                <button className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-green-300 hover:bg-blue-100 transition text-sm font-medium">
+                  <FaRegEdit/> Edit
+                </button>
+
+                {/* 🗑 Delete */}
+                <button
+                  onClick={() => deleteItem(item._id)}
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-sm font-medium"
+                >
+                  <AiOutlineDelete/> Delete
+                </button>
+              </div>
             </div>
           </div>
         ))}

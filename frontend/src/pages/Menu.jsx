@@ -36,6 +36,7 @@ const Menu = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [cafe, setCafe] = useState(null);
+  const [showSticky, setShowSticky] = useState(true);
 
   // 🔥 SEARCH STATE
   const [search, setSearch] = useState("");
@@ -101,10 +102,32 @@ const Menu = () => {
     setShowCart(false);
   };
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // scrolling DOWN
+        setShowSticky(false);
+      } else {
+        // scrolling UP
+        setShowSticky(true);
+      }
+
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 font-poppins">
       {/* 🔝 Sticky Top */}
-      <div className="sticky p-4 pb-0 top-0 z-50 bg-gray-50 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
+      <div className=" p-4 pb-0 z-50 bg-gray-50 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
         <div className="max-w-7xl mx-auto">
           <Header
             brand={{ name: cafe?.name || "Cafe Delight" }}
@@ -116,45 +139,48 @@ const Menu = () => {
             tableNumber={tableNumber}
             setTableNumber={setTableNumber}
           />
-          {/* Title */}
-          <div>
-            <p className="text-md font-semibold text-gray-400 -mb-3 mt-4">
-              Our Food
-            </p>
-            <div className="flex justify-between items-center my-4">
-              <h1 className="text-3xl font-semibold text-green-700 tracking-tight">
-                Special For You
-              </h1>
-              <span className="text-sm text-gray-500">
-                {filteredMenu.length} items
-              </span>
-            </div>
+        </div>
+      </div>
+      {/* Categories */}
+      <div
+        className={`sticky top-0 p-3 overflow-x-auto scrollbar-hide scroll-smooth z-50 bg-white transition-transform duration-300 ${
+          showSticky ? "translate-y-0 shadow-sm" : "-translate-y-full"
+        }`}
+      >
+        {/* Title */}
+        <div>
+          <p className="text-md font-semibold text-gray-400 -mb-3 mt-0">
+            Our Food
+          </p>
+          <div className="flex justify-between items-center my-4">
+            <h1 className="text-3xl font-semibold text-green-700 tracking-tight">
+              Special For You
+            </h1>
+            <span className="text-sm text-gray-500">
+              {filteredMenu.length} items
+            </span>
           </div>
+        </div>
 
-          {/* 🔍 Search Bar */}
-          <div className="pb-2">
-            <div className="flex items-center bg-gray-200 rounded-lg px-4 py-2 focus-within:ring-2 focus-within:ring-green-800">
-              <FiSearch className="text-gray-400 mr-2" />
-              <input
-                type="text"
-                placeholder="Search food..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-400"
-              />
-            </div>
+        {/* 🔍 Search Bar */}
+        <div className="pb-2">
+          <div className="flex items-center bg-gray-200 rounded-lg px-4 py-2 my-2 focus-within:ring-2 focus-within:ring-green-800">
+            <FiSearch className="text-gray-400 mr-2" />
+            <input
+              type="text"
+              placeholder="Search food..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-400"
+            />
           </div>
-
-          {/* Categories */}
-          <div className="p-3 overflow-x-auto scrollbar-hide scroll-smooth">
-            <div className="flex gap-3 min-w-max">
-              <CategoryFilter
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelect={loadMenu}
-              />
-            </div>
-          </div>
+        </div>
+        <div className="flex gap-3 min-w-max">
+          <CategoryFilter
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelect={loadMenu}
+          />
         </div>
       </div>
 
@@ -178,7 +204,7 @@ const Menu = () => {
         {/* Menu Grid */}
         <div className="max-w-7xl mx-auto">
           {loading ? (
-            <MenuSkeleton/>
+            <MenuSkeleton />
           ) : filteredMenu.length === 0 ? (
             <div className="text-center mt-20">
               <p className="text-gray-400 text-lg">No items available 🍽️</p>
