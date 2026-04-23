@@ -1,6 +1,7 @@
 import CartItem from "./CartItem";
 import PlaceOrderButton from "../PlaceOrderButton";
 import { MdOutlineShoppingCart } from "react-icons/md";
+import { FaArrowRight, FaShoppingCart } from "react-icons/fa";
 // 🛒
 
 const CartSidebar = ({
@@ -48,7 +49,7 @@ const CartSidebar = ({
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               {/* Icon / Illustration */}
-              <div className="text-5xl mb-3">🛒</div>
+              <div className="text-5xl mb-3"><FaShoppingCart/></div>
 
               {/* Title */}
               <h2 className="text-lg font-semibold text-gray-800">
@@ -63,9 +64,9 @@ const CartSidebar = ({
               {/* CTA Button */}
               <button
                 onClick={() => setShowCart(false)}
-                className="mt-5 bg-green-800 text-white px-6 py-2 rounded-full hover:bg-green-900 transition"
+                className="flex items-center gap-2 mt-5 bg-green-800 text-white px-6 py-2 rounded-full hover:bg-green-900 transition"
               >
-                Browse Menu →
+                Browse Menu <FaArrowRight/>
               </button>
             </div>
           ) : (

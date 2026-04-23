@@ -57,8 +57,7 @@ const OrderStatus = () => {
   };
 
   useEffect(() => {
-
-    if (!cafeId || !tableNumber) return; 
+    if (!cafeId || !tableNumber) return;
 
     fetchOrders();
 
@@ -106,34 +105,38 @@ const OrderStatus = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-5">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-5">
       <div className="max-w-xl mx-auto">
-        <div className="flex justify-between items-center mb-5">
-          <h1 className="text-2xl font-bold">🧾 Your Orders</h1>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">🧾 Your Orders</h1>
 
           <button
             onClick={() => navigate(`/?cafe=${cafeId}&table=${tableNumber}`)}
-            className="bg-black text-white px-4 py-2 rounded-full shadow"
+            className="bg-black text-white px-5 py-2 rounded-full shadow hover:scale-105 transition"
           >
             ← Menu
           </button>
         </div>
 
+        {/* Empty State */}
         {orders.length === 0 ? (
           <EmptyState
             title="No Active Orders"
             subtitle="Place your order from the menu 🍽️"
           />
-        ) : (Array.isArray(orders) &&
+        ) : (
           orders.map((order) => (
             <div
               key={order._id}
-              className="bg-white rounded-2xl shadow p-5 mb-5"
+              className="backdrop-blur-lg bg-white/70 border border-white/30 rounded-3xl shadow-lg p-6 mb-6 hover:shadow-xl transition"
             >
-              <p className="text-sm text-gray-500 mb-2">
-                Order ID: #{order._id.slice(-6)}
+              {/* Order ID */}
+              <p className="text-xs text-gray-500 mb-3">
+                Order #{order._id.slice(-6)}
               </p>
 
+              {/* Items */}
               {order.items.map((item, i) => {
                 const extras =
                   item.selectedOptions?.reduce((s, o) => s + o.price, 0) || 0;
@@ -141,16 +144,18 @@ const OrderStatus = () => {
                 const itemTotal = (item.price + extras) * item.qty;
 
                 return (
-                  <div key={i} className="mb-2">
-                    <div className="flex justify-between">
+                  <div key={i} className="mb-3">
+                    <div className="flex justify-between font-medium">
                       <span>
-                        {item.name} x {item.qty}
+                        {item.name}{" "}
+                        <span className="text-gray-400">×{item.qty}</span>
                       </span>
                       <span>₹{itemTotal}</span>
                     </div>
 
+                    {/* Options */}
                     {item.selectedOptions?.map((opt, idx) => (
-                      <p key={idx} className="text-sm text-gray-500 ml-2">
+                      <p key={idx} className="text-xs text-gray-500 ml-3">
                         + {opt.name} (₹{opt.price})
                       </p>
                     ))}
@@ -158,29 +163,56 @@ const OrderStatus = () => {
                 );
               })}
 
-              <div className="flex justify-between font-bold mt-3">
+              {/* Total */}
+              <div className="flex justify-between font-bold text-lg mt-4 border-t pt-3">
                 <span>Total</span>
                 <span>₹{order.total}</span>
               </div>
 
-              <div className="mt-4 flex items-center justify-between">
+              {/* Status Section */}
+              <div className="mt-5 flex items-center justify-between">
+                {/* Status Badge */}
                 <span
-                  className={`px-4 py-1 rounded-full text-white text-sm ${getStatusUI(
-                    order.status,
-                  )}`}
+                  className={`px-4 py-1 rounded-full text-white text-sm capitalize ${
+                    order.status === "completed"
+                      ? "bg-green-500"
+                      : order.status === "preparing"
+                        ? "bg-yellow-500 animate-pulse"
+                        : "bg-gray-400"
+                  }`}
                 >
                   {order.status || "pending"}
                 </span>
 
-                {(order.status || "").toLowerCase() === "completed" && (
-                  <span className="text-green-600 text-sm font-medium">
-                    ✅ Ready!
+                {/* Status Text */}
+                {order.status === "completed" && (
+                  <span className="text-green-600 font-medium text-sm animate-bounce">
+                    ✅ Ready to serve
                   </span>
                 )}
 
-                {(order.status || "").toLowerCase() === "preparing" && (
-                  <span className="text-yellow-600 text-sm">👨‍🍳 Cooking...</span>
+                {order.status === "preparing" && (
+                  <span className="text-yellow-600 text-sm flex items-center gap-1">
+                    👨‍🍳 Cooking...
+                  </span>
                 )}
+
+                {order.status === "pending" && (
+                  <span className="text-gray-500 text-sm">🕒 Waiting...</span>
+                )}
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    order.status === "completed"
+                      ? "w-full bg-green-500"
+                      : order.status === "preparing"
+                        ? "w-2/3 bg-yellow-500"
+                        : "w-1/4 bg-gray-400"
+                  }`}
+                />
               </div>
             </div>
           ))
