@@ -29,6 +29,7 @@ const AddItemModal = ({ onClose, refresh, editItem }) => {
     setOptions([...options, { title: "", type: "single", choices: [] }]);
   };
 
+
   // 🔥 Add choice inside option
   const addChoice = (index) => {
     const updated = [...options];
