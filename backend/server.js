@@ -20,10 +20,16 @@ const passport = require("./config/passport");
 const app = express();
 const server = http.createServer(app); // ✅ IMPORTANT
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://cafeproject-rho.vercel.app",
+];
+
 // 🔥 SOCKET SETUP
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173/", // frontend url
+    origin: allowedOrigins,
+    methods: ["GET","POST"],
   },
 });
 
@@ -52,7 +58,7 @@ io.on("connection", (socket) => {
 });
 
 // Middleware
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(helmet());
 app.use(session({

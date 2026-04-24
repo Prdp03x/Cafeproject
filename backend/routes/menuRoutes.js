@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Menu = require("../models/Menu");
+const auth = require("../middleware/auth");
 
 // 🔥 GET MENU BY CAFE + CATEGORY
 router.get("/", async (req, res) => {
@@ -18,12 +19,7 @@ router.get("/", async (req, res) => {
       filter.category = category;
     }
 
-    console.log("Incoming cafeId:", cafeId);
-console.log("Filter:", filter);
-
-const items = await Menu.find(filter);/////////////
-
-console.log("Items found:", items.length);
+const items = await Menu.find(filter);
 
     res.json(items);
   } catch (err) {
@@ -60,12 +56,36 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE ITEMS FROM MENU
-router.delete("/:id", async (req, res) => {
+// 🔥 UPDATE MENU ITEM (THIS IS NEW)
+router.put("/:id", auth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const updatedItem = await Menu.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        cafeId: req.cafeId, // 🔐 only allow own cafe
+      },
+      req.body,
+      { new: true }
+    );
 
-    const deletedItem = await Menu.findByIdAndDelete(id);
+    if (!updatedItem) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    res.json(updatedItem);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// DELETE ITEMS FROM MENU
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const deletedItem = await Menu.findOneAndDelete({
+      _id: req.params.id,
+      cafeId: req.cafeId,
+    });
 
     if (!deletedItem) {
       return res.status(404).json({ error: "Menu item not found" });

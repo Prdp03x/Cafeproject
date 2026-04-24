@@ -8,6 +8,7 @@ import { AiOutlineDelete } from "react-icons/ai";
 const AdminPanel = () => {
   const [menu, setMenu] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const navigate = useNavigate();
 
   const fetchMenu = async () => {
@@ -42,9 +43,11 @@ const AdminPanel = () => {
 
         <button
           onClick={() => navigate("/dashboard")}
-          className="text-md font-bold bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 flex items-center gap-2"
+          className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full md:rounded flex items-center justify-center md:gap-2 md:px-4 md:py-2"
         >
-          <FaArrowLeft /> Dashboard
+          <FaArrowLeft className="text-lg" />
+
+          <span className="hidden md:inline text-md font-bold">Dashboard</span>
         </button>
       </div>
 
@@ -83,8 +86,14 @@ const AdminPanel = () => {
               {/* Actions */}
               <div className="flex flex-col gap-2">
                 {/* ✏️ Edit */}
-                <button className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-green-300 hover:bg-blue-100 transition text-sm font-medium">
-                  <FaRegEdit/> Edit
+                <button
+                  onClick={() => {
+                    setEditingItem(item);
+                    setShowModal(true);
+                  }}
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-sm font-medium"
+                >
+                  <FaRegEdit /> Edit
                 </button>
 
                 {/* 🗑 Delete */}
@@ -92,7 +101,7 @@ const AdminPanel = () => {
                   onClick={() => deleteItem(item._id)}
                   className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-sm font-medium"
                 >
-                  <AiOutlineDelete/> Delete
+                  <AiOutlineDelete /> Delete
                 </button>
               </div>
             </div>
@@ -100,7 +109,14 @@ const AdminPanel = () => {
         ))}
       </div>
       {showModal && (
-        <AddItemModal onClose={() => setShowModal(false)} refresh={fetchMenu} />
+        <AddItemModal 
+            onClose={() => {
+              setShowModal(false);
+              setEditingItem(null);
+            }} 
+            refresh={fetchMenu} 
+            editItem={editingItem}
+        />
       )}
     </div>
   );
