@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import API from "../api/api";
 import { useNavigate } from "react-router";
 import GoogleLoginButton from "../components/Common/GoogleLoginButton";
