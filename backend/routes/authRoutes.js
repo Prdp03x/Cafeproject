@@ -4,6 +4,26 @@ const Cafe = require("../models/Cafe");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
+const auth = require("../middleware/auth");
+
+const buildAuthResponse = (cafe) => {
+  const cafeId = cafe._id.toString();
+
+  const token = jwt.sign(
+    { cafeId },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  return {
+    token,
+    cafe: {
+      id: cafeId,
+      name: cafe.name,
+      email: cafe.email,
+    },
+  };
+};
 
 
 // ================== SIGNUP ==================
@@ -31,8 +51,28 @@ router.post("/signup", async (req, res) => {
 
     await cafe.save();
 
-    res.json({ message: "Cafe created" });
+    res.json(buildAuthResponse(cafe));
 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ================== CURRENT CAFE ==================
+router.get("/me", auth, async (req, res) => {
+  try {
+    const cafe = await Cafe.findById(req.cafeId).select("-password");
+
+    if (!cafe) {
+      return res.status(404).json({ error: "Cafe not found" });
+    }
+
+    res.json({
+      id: cafe._id.toString(),
+      name: cafe.name,
+      email: cafe.email,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -50,20 +90,7 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, cafe.password);
     if (!isMatch) return res.status(400).json({ error: "Wrong password" });
 
-    const token = jwt.sign(
-      { cafeId: cafe._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.json({
-      token,
-      cafe: {
-        id: cafe._id,
-        name: cafe.name,
-        email: cafe.email,
-      },
-    });
+    res.json(buildAuthResponse(cafe));
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -85,11 +112,7 @@ router.get("/google/callback",
     try {
       const user = req.user;
 
-      const token = jwt.sign(
-        { cafeId: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-      );
+      const { token } = buildAuthResponse(user);
 
       // 🔥 Redirect with token
       res.redirect(`http://localhost:5173/google-success?token=${token}`);

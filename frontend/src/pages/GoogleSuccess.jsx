@@ -1,24 +1,34 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import API from "../api/api";
 
 export default function GoogleSuccess() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+    const completeLogin = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
 
-    console.log("TOKEN:", token); // 🔥 DEBUG
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
-    if (token) {
       localStorage.setItem("token", token);
-      setTimeout(() => {
+
+      try {
+        const res = await API.get("/auth/me");
+        localStorage.setItem("cafe", JSON.stringify(res.data));
         navigate("/dashboard");
-      }, 100);
-    } else {
-      navigate("/login");
-    }
-  }, []);
+      } catch {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    };
+
+    completeLogin();
+  }, [navigate]);
 
   return <div>Logging you in...</div>;
 }

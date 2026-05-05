@@ -1,27 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import API from "../../api/api";
 
 const AddItemModal = ({ onClose, refresh, editItem }) => {
-  const [options, setOptions] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    category: "",
-    image: "",
-  });
-  
-   useEffect(() => {
-  if (editItem) {
-    setForm({
-      name: editItem.name,
-      price: editItem.price,
-      category: editItem.category,
-      image: editItem.image,
-    });
-
-    setOptions(editItem.options || []);
-  }
-}, [editItem]);
+  const [options, setOptions] = useState(() => editItem?.options || []);
+  const [form, setForm] = useState(() => ({
+    name: editItem?.name || "",
+    price: editItem?.price || "",
+    category: editItem?.category || "",
+    image: editItem?.image || "",
+  }));
 
 
   // 🔥 Add new option group
@@ -37,19 +24,7 @@ const AddItemModal = ({ onClose, refresh, editItem }) => {
     setOptions(updated);
   };
 
-  // const handleSave = async () => {
-  //   const cafe = JSON.parse(localStorage.getItem("cafe"));
 
-  //   await API.post("/menu", {
-  //     ...form,
-  //     price: Number(form.price),
-  //     options,
-  //     cafeId: cafe.id,
-  //   });
-
-  //   refresh();
-  //   onClose();
-  // };
 
   const handleSave = async () => {
   const cafe = JSON.parse(localStorage.getItem("cafe"));

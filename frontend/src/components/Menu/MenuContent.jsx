@@ -6,20 +6,20 @@ const MenuContent = ({
   items,
   onItemClick,
   error,
-  emptyText
+  emptyText = "No items available",
 }) => {
   if (loading) {
     return <MenuSkeleton />;
   }
 
-  if(error) return <p>Error loading Menu</p>
-  
+  if (error) return <p>Error loading Menu</p>;
+
   if (!items || items.length === 0) {
     return (
       <div className="text-center mt-20">
-        <p className="text-gray-400 text-lg">No items available 🍽️</p>
+        <p className="text-gray-400 text-lg">{emptyText}</p>
         <p className="text-sm text-gray-500 mt-2">
-          This cafe hasn’t added menu yet
+          This cafe has not added menu yet
         </p>
       </div>
     );

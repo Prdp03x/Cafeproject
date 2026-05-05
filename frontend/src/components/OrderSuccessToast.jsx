@@ -9,7 +9,7 @@ const OrderSuccessToast = ({ show, onClose }) => {
 
       return () => clearTimeout(timer);
     }
-  }, [show]);
+  }, [show, onClose]);
 
   return (
     <div

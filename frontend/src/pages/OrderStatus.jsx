@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import EmptyState from "../components/EmptyState";
 import API from "../api/api";
@@ -18,19 +18,7 @@ const OrderStatus = () => {
     document.title = "Your Orders | My Cafe";
   }, []);
 
-  useEffect(() => {
-    socket.emit("joinCafe", cafeId);
-
-    socket.on("orderUpdated", () => {
-      fetchOrders();
-    });
-
-    return () => {
-      socket.off("orderUpdated");
-    };
-  }, [cafeId]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       if (!cafeId || !tableNumber) {
         console.warn("Missing cafeId or tableNumber");
@@ -54,16 +42,31 @@ const OrderStatus = () => {
       console.error("Error fetching orders:", err);
       setOrders([]);
     }
-  };
+  }, [cafeId, tableNumber, sessionId]);
+
+  useEffect(() => {
+    if (!cafeId) return;
+
+    socket.emit("joinCafe", cafeId);
+
+    socket.on("orderUpdated", fetchOrders);
+
+    return () => {
+      socket.off("orderUpdated", fetchOrders);
+    };
+  }, [cafeId, fetchOrders]);
 
   useEffect(() => {
     if (!cafeId || !tableNumber) return;
 
-    fetchOrders();
+    const initialFetch = setTimeout(fetchOrders, 0);
 
     const interval = setInterval(fetchOrders, 4000);
-    return () => clearInterval(interval);
-  }, [cafeId, tableNumber]);
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
+  }, [cafeId, tableNumber, fetchOrders]);
 
   // 🔥 Auto remove completed orders after 10 sec
   useEffect(() => {
@@ -93,16 +96,7 @@ const OrderStatus = () => {
     }, 10000);
 
     return () => clearTimeout(timer);
-  }, [orders]);
-
-  const getStatusUI = (status) => {
-    const s = (status || "").toLowerCase();
-
-    if (s === "completed") return "bg-green-500";
-    if (s === "preparing") return "bg-yellow-500 animate-pulse";
-
-    return "bg-gray-400";
-  };
+  }, [orders, cafeId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-5">

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useOrders from "../hooks/useOrders";
 import API from "../api/api";
 import OrderCard from "../components/Dashboard/OrderCard";
@@ -12,12 +12,36 @@ const Dashboard = () => {
   const { orders, setOrders, newOrderIds, fetchOrders } = useOrders();
   const navigate = useNavigate();
 
-  const cafe = JSON.parse(localStorage.getItem("cafe") || "null");
+  const [cafe, setCafe] = useState(() =>
+    JSON.parse(localStorage.getItem("cafe") || "null"),
+  );
 
   useEffect(() => {
     document.title = "Dashboard | Kitchen";
-    if (!cafe) window.location.href = "/login";
-  }, [cafe]);
+
+    const loadCafe = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      if (cafe) return;
+
+      try {
+        const res = await API.get("/auth/me");
+        localStorage.setItem("cafe", JSON.stringify(res.data));
+        setCafe(res.data);
+      } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("cafe");
+        navigate("/login");
+      }
+    };
+
+    loadCafe();
+  }, [cafe, navigate]);
 
   useEffect(() => {
     if (!cafe?.id) return;
@@ -59,7 +83,7 @@ const Dashboard = () => {
     }
   };
 
-  // console.log("Token:", localStorage.getItem("token"));
+  // console.log("Cafe from token:", req.cafeId);
 
   return (
     <div className="min-h-screen bg-gray-100">

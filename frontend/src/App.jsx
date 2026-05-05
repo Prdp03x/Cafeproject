@@ -25,7 +25,14 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
           } />
-          <Route path="/dashboard/menu" element={<AdminPanel />} />
+          <Route
+            path="/dashboard/menu"
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/google-success" element={<GoogleSuccess />} />
         <Route path="/status" element={<OrderStatus />} />
       </Routes>

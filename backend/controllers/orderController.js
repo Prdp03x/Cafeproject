@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 // 🔥 CREATE ORDER
 exports.createOrder = async (req, res) => {
   try {
-    const { items, tableNumber, cafeId, sessionId } = req.body;
+    const { items, tableNumber, sessionId, cafeId } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: "No items in order" });
@@ -12,6 +12,10 @@ exports.createOrder = async (req, res) => {
 
     if (!tableNumber) {
       return res.status(400).json({ error: "Table number required" });
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "Session ID required" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(cafeId)) {
@@ -38,7 +42,7 @@ exports.createOrder = async (req, res) => {
 
     // 🔥 SOCKET
     const io = req.app.get("io");
-    io.to(cafeId.toString()).emit("newOrder", newOrder);
+    io.to(cafeId).emit("newOrder", newOrder);
 
     res.json({
       message: "Order placed",
@@ -51,14 +55,34 @@ exports.createOrder = async (req, res) => {
 };
 
 // 🔥 ADMIN ORDERS
+// exports.getAdminOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ cafeId: req.cafeId }).sort({
+//       createdAt: -1,
+//     });
+
+//     res.json(orders);
+//   } catch (err) {
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 exports.getAdminOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ cafeId: req.cafeId }).sort({
-      createdAt: -1,
-    });
+    const cafeId = req.cafeId; // ✅ from auth middleware
+
+    if (!cafeId) {
+      return res.status(400).json({ error: "Cafe ID missing in token" });
+    }
+
+    const orders = await Order.find({
+      cafeId: new mongoose.Types.ObjectId(cafeId),
+    }).sort({ createdAt: -1 });
 
     res.json(orders);
+
+    // console.log("Token cafeId:", req.cafeId);
   } catch (err) {
+    console.error(err); // 🔥 useful for debugging
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -75,7 +99,7 @@ exports.getCustomerOrders = async (req, res) => {
     const orders = await Order.find({
       cafeId: new mongoose.Types.ObjectId(cafeId),
       tableNumber: String(tableNumber),
-      sessionId,
+      sessionId: sessionId,
     }).sort({ createdAt: -1 });
 
     res.json(orders);
@@ -93,10 +117,15 @@ exports.updateOrder = async (req, res) => {
       return res.status(400).json({ error: "Status is required" });
     }
 
-    await Order.findByIdAndUpdate(
+    const updatedOrder = await Order.findOneAndUpdate(
       { _id: req.params.id, cafeId: req.cafeId },
-      { status }
+      { status },
+      { new: true }
     );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
     const io = req.app.get("io");
     io.to(req.cafeId.toString()).emit("orderUpdated", {
@@ -113,10 +142,14 @@ exports.updateOrder = async (req, res) => {
 // 🔥 DELETE ORDER
 exports.deleteOrder = async (req, res) => {
   try {
-    await Order.findByIdAndDelete({
+    const deletedOrder = await Order.findOneAndDelete({
       _id: req.params.id,
       cafeId: req.cafeId,
     });
+
+    if (!deletedOrder) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
     const io = req.app.get("io");
     io.to(req.cafeId.toString()).emit("orderDeleted", req.params.id);

@@ -24,7 +24,7 @@ const PlaceOrderButton = ({ placeOrder, disabled, tableNumber }) => {
       setTimeout(() => {
         setStatus("idle");
       }, 1500);
-    } catch (err) {
+    } catch {
       setStatus("idle");
       alert("Order failed!");
     }

@@ -16,7 +16,7 @@ const useMenu = (cafeId) => {
     const res = await API.get(`/menu/categories?cafeId=${cafeId}`);
 
     setCategories(Array.isArray(res.data) ? res.data : []);
-  } catch (err) {
+  } catch {
     console.error("Failed to fetch categories");
     setCategories([]); // fallback to avoid crash
   }
@@ -37,7 +37,7 @@ const loadMenu = useCallback (async (category = "") => {
 
     setMenu(Array.isArray(res.data) ? res.data : []);
     setSelectedCategory(category);
-  } catch (err) {
+  } catch {
     console.error("Failed to load menu");
   } finally {
     setLoading(false);

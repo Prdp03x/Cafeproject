@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import API from "../api/api";
 import AddItemModal from "../components/Admin/AddItemModal";
 import { useNavigate } from "react-router";
@@ -11,27 +11,32 @@ const AdminPanel = () => {
   const [editingItem, setEditingItem] = useState(null);
   const navigate = useNavigate();
 
-  const fetchMenu = async () => {
+  const fetchMenu = useCallback(async () => {
     try {
       const cafe = JSON.parse(localStorage.getItem("cafe"));
+      if (!cafe?.id) {
+        navigate("/login");
+        return;
+      }
 
       const res = await API.get(`/menu?cafeId=${cafe.id}`);
       setMenu(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error("Failed to fetch menu");
+      console.error("Failed to fetch menu", err);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
-    fetchMenu();
-  }, []);
+    const timer = setTimeout(fetchMenu, 0);
+    return () => clearTimeout(timer);
+  }, [fetchMenu]);
 
   const deleteItem = async (id) => {
     try {
       setMenu((prev) => prev.filter((item) => item._id !== id));
       await API.delete(`/menu/${id}`);
     } catch (err) {
-      console.error("Delete failed");
+      console.error("Delete failed", err);
       fetchMenu();
     }
   };

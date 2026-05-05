@@ -13,7 +13,13 @@ const useOrderCount = (cafeId, tableNumber) => {
         const sessionId = localStorage.getItem("sessionId");
 
         const res = await API.get(
-          `/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}&sessionId=${sessionId}`
+          "/orders/customer", {
+            params: {
+              cafeId,
+              tableNumber,
+              sessionId
+            }
+          }
         );
 
         setOrderCount(res.data.length);
