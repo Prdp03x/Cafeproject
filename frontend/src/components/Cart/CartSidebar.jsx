@@ -1,5 +1,5 @@
 import CartItem from "./CartItem";
-import PlaceOrderButton from "../PlaceOrderButton";
+import PlaceOrderButton from "./PlaceOrderButton";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { FaArrowRight, FaShoppingCart } from "react-icons/fa";
 // 🛒

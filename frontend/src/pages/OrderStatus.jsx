@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import EmptyState from "../components/EmptyState";
+import EmptyState from "../components/Common/EmptyState";
 import API from "../api/api";
 import socket from "../socket";
 

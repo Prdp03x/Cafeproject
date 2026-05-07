@@ -1,15 +1,15 @@
 import { useSearchParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 // COMPONENTS
 import Header from "../components/Common/Header";
-import OrderSuccessToast from "../components/OrderSuccessToast";
 import CategoryFilter from "../components/Menu/CategoryFilter";
 import CartSidebar from "../components/Cart/CartSidebar";
 import FloatingCart from "../components/Menu/FloatingCart";
 import SearchBar from "../components/Menu/SearchBar";
 import MenuContent from "../components/Menu/MenuContent";
-import TableSelector from "../components/TableSelector";
-import TopActions from "../components/TopActions";
+import TableSelector from "../components/Menu/TableSelector";
+import TopActions from "../components/Menu/TopActions";
 import ItemModel from "../components/Menu/ItemModel";
 // HOOKS
 import useMenu from "../hooks/useMenu";
@@ -36,7 +36,6 @@ const Menu = () => {
   );
   const [search, setSearch] = useState("");
   const [showCart, setShowCart] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -114,11 +113,11 @@ const Menu = () => {
       sessionId,
     });
 
-    window.location.reload();
-    setShowSuccess(true);
     setCart([]);
     setSelectedOptions({});
     setShowCart(false);
+    toast.success("Order placed");
+    navigate(`/status?cafe=${cafeId}&table=${tableNumber}`);
   };
 
   // 🔹 UI
@@ -177,10 +176,6 @@ const Menu = () => {
       </div>
 
       {/* 🔹 Toast */}
-      <OrderSuccessToast
-        show={showSuccess}
-        onClose={() => setShowSuccess(false)}
-      />
 
       {/* 🔹 Main Content */}
       <div className="p-4 pb-28">

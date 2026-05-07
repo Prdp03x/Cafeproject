@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import Menu from "./pages/Menu";
 import Dashboard from "./pages/Dashboard";
 import OrderStatus from "./pages/OrderStatus";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/Common/ProtectedRoute";
 import Login from "./pages/Login";
 import GoogleSuccess from "./pages/GoogleSuccess";
 import Signup from "./pages/Signup";
