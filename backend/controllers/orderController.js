@@ -90,16 +90,19 @@ exports.getAdminOrders = async (req, res) => {
 // 🔥 CUSTOMER ORDERS
 exports.getCustomerOrders = async (req, res) => {
   try {
-    const { cafeId, tableNumber, sessionId } = req.query;
+    const { cafeId, tableNumber } = req.query;
 
-    if (!cafeId || !tableNumber || !sessionId) {
+    if (!cafeId || !tableNumber) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(cafeId)) {
+      return res.status(400).json({ error: "Invalid cafeId" });
     }
 
     const orders = await Order.find({
       cafeId: new mongoose.Types.ObjectId(cafeId),
       tableNumber: String(tableNumber),
-      sessionId: sessionId,
     }).sort({ createdAt: -1 });
 
     res.json(orders);
@@ -120,7 +123,7 @@ exports.updateOrder = async (req, res) => {
     const updatedOrder = await Order.findOneAndUpdate(
       { _id: req.params.id, cafeId: req.cafeId },
       { status },
-      { new: true }
+      { returnDocument: true }
     );
 
     if (!updatedOrder) {

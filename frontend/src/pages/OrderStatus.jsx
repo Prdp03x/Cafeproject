@@ -12,8 +12,6 @@ const OrderStatus = () => {
   const cafeId = params.get("cafe");
   const tableNumber = params.get("table");
 
-  const sessionId = localStorage.getItem("sessionId");
-
   useEffect(() => {
     document.title = "Your Orders | My Cafe";
   }, []);
@@ -26,9 +24,9 @@ const OrderStatus = () => {
         return;
       }
 
-      const res = await API.get(
-        `/orders/customer?cafeId=${cafeId}&tableNumber=${tableNumber}&sessionId=${sessionId}`,
-      );
+      const res = await API.get("/orders/customer", {
+        params: { cafeId, tableNumber },
+      });
 
       if (Array.isArray(res.data)) {
         setOrders(res.data);
@@ -42,7 +40,7 @@ const OrderStatus = () => {
       console.error("Error fetching orders:", err);
       setOrders([]);
     }
-  }, [cafeId, tableNumber, sessionId]);
+  }, [cafeId, tableNumber]);
 
   useEffect(() => {
     if (!cafeId) return;

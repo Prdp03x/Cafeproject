@@ -1,4 +1,10 @@
-const OrderCard = ({ order, isNew, updateStatus, deleteOrder }) => {
+const OrderCard = ({ order, isNew, updateStatus, deleteOrder, loadingActions }) => {
+  const isPreparingLoading = Boolean(loadingActions[`${order._id}:preparing`]);
+  const isCompletedLoading = Boolean(loadingActions[`${order._id}:completed`]);
+  const isDeleteLoading = Boolean(loadingActions[`${order._id}:delete`]);
+  const isAnyActionLoading =
+    isPreparingLoading || isCompletedLoading || isDeleteLoading;
+
   const getStatusColor = (status) => {
     if (status === "completed") return "bg-green-100 text-green-600";
     if (status === "preparing") return "bg-yellow-100 text-yellow-600";
@@ -60,24 +66,27 @@ const OrderCard = ({ order, isNew, updateStatus, deleteOrder }) => {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => updateStatus(order._id, "preparing")}
-          className="flex-1 bg-yellow-400 text-white py-2 rounded-lg"
+          disabled={isAnyActionLoading}
+          className="flex-1 bg-yellow-400 text-white py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Preparing
+          {isPreparingLoading ? "Updating..." : "Preparing"}
         </button>
 
         <button
           onClick={() => updateStatus(order._id, "completed")}
-          className="flex-1 bg-green-500 text-white py-2 rounded-lg"
+          disabled={isAnyActionLoading}
+          className="flex-1 bg-green-500 text-white py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Done
+          {isCompletedLoading ? "Updating..." : "Done"}
         </button>
 
         {order.status === "completed" && (
           <button
             onClick={() => deleteOrder(order._id)}
-            className="flex-1 bg-red-500 text-white py-2 rounded-lg"
+            disabled={isAnyActionLoading}
+            className="flex-1 bg-red-500 text-white py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Delete
+            {isDeleteLoading ? "Deleting..." : "Delete"}
           </button>
         )}
       </div>

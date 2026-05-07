@@ -65,7 +65,7 @@ router.put("/:id", auth, async (req, res) => {
         cafeId: req.cafeId, // 🔐 only allow own cafe
       },
       req.body,
-      { new: true }
+      { returnDocument: true }
     );
 
     if (!updatedItem) {

@@ -7,10 +7,12 @@ import StatCard from "../components/Dashboard/StatCard";
 import socket from "../socket";
 import { useNavigate } from "react-router";
 import { FaEdit } from 'react-icons/fa'
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
   const { orders, setOrders, newOrderIds, fetchOrders } = useOrders();
   const navigate = useNavigate();
+  const [loadingActions, setLoadingActions] = useState({});
 
   const [cafe, setCafe] = useState(() =>
     JSON.parse(localStorage.getItem("cafe") || "null"),
@@ -69,17 +71,52 @@ const Dashboard = () => {
     };
   }, [cafe, setOrders]);
 
-  const updateStatus = async (id, status) => {
-    await API.put(`/orders/${id}`, { status });
-    fetchOrders();
+  const setActionLoading = (id, action, isLoading) => {
+    const key = `${id}:${action}`;
+
+    setLoadingActions((prev) => {
+      if (isLoading) return { ...prev, [key]: true };
+
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
-  const deleteOrder = async (id) => {
+  const isOrderBusy = (id) =>
+    Object.keys(loadingActions).some((key) => key.startsWith(`${id}:`));
+
+  const updateStatus = async (id, status) => {
+    if (isOrderBusy(id)) return;
+
+    setActionLoading(id, status, true);
+
     try {
-      await API.delete(`/orders/${id}`);
+      await API.put(`/orders/${id}`, { status });
+      toast.success(`Order marked as ${status}`);
       fetchOrders();
     } catch (err) {
       console.error(err);
+      toast.error("Failed to update order status");
+    } finally {
+      setActionLoading(id, status, false);
+    }
+  };
+
+  const deleteOrder = async (id) => {
+    if (isOrderBusy(id)) return;
+
+    setActionLoading(id, "delete", true);
+
+    try {
+      await API.delete(`/orders/${id}`);
+      toast.success("Order deleted");
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete order");
+    } finally {
+      setActionLoading(id, "delete", false);
     }
   };
 
@@ -89,11 +126,16 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-100">
       {/* 🔝 Top Bar */}
       <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
+        <div className="flex gap-2 items-start">
+        <div className="h-10 w-10 rounded-full bg-green-800 flex items-center justify-center text-white font-semibold">
+            {cafe?.name?.charAt(0) || "C"}
+          </div>
         <div>
           <h1 className="text-xl font-semibold tracking-tight">
             {cafe?.name || "Cafe"}
           </h1>
           <p className="text-sm text-gray-500">Kitchen Dashboard</p>
+        </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -154,6 +196,7 @@ const Dashboard = () => {
                   isNew={newOrderIds.includes(order._id)}
                   updateStatus={updateStatus}
                   deleteOrder={deleteOrder}
+                  loadingActions={loadingActions}
                 />
               ))}
             </div>

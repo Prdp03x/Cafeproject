@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import GoogleSuccess from "./pages/GoogleSuccess";
 import Signup from "./pages/Signup";
 import AdminPanel from "./pages/AdminPanel";
+import { ToastContainer } from "react-toastify";
 
 
 
@@ -36,6 +37,7 @@ function App() {
           <Route path="/google-success" element={<GoogleSuccess />} />
         <Route path="/status" element={<OrderStatus />} />
       </Routes>
+      <ToastContainer position="top-center" autoClose={2500} hideProgressBar />
     </BrowserRouter>
   );
 }

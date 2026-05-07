@@ -15,7 +15,7 @@ exports.updateMenuItem = async (req, res) => {
         cafeId: req.cafeId, // 🔐 security
       },
       req.body,
-      { new: true }
+      { returnDocument: true }
     );
 
     if (!updatedItem) {

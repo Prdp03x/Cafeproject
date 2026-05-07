@@ -10,14 +10,11 @@ const useOrderCount = (cafeId, tableNumber) => {
 
     const updateCount = async () => {
       try {
-        const sessionId = localStorage.getItem("sessionId");
-
         const res = await API.get(
           "/orders/customer", {
             params: {
               cafeId,
               tableNumber,
-              sessionId
             }
           }
         );
