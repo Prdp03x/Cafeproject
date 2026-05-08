@@ -55,17 +55,6 @@ exports.createOrder = async (req, res) => {
 };
 
 // 🔥 ADMIN ORDERS
-// exports.getAdminOrders = async (req, res) => {
-//   try {
-//     const orders = await Order.find({ cafeId: req.cafeId }).sort({
-//       createdAt: -1,
-//     });
-
-//     res.json(orders);
-//   } catch (err) {
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// };
 exports.getAdminOrders = async (req, res) => {
   try {
     const cafeId = req.cafeId; // ✅ from auth middleware
@@ -80,7 +69,6 @@ exports.getAdminOrders = async (req, res) => {
 
     res.json(orders);
 
-    // console.log("Token cafeId:", req.cafeId);
   } catch (err) {
     console.error(err); // 🔥 useful for debugging
     res.status(500).json({ error: "Internal server error" });
