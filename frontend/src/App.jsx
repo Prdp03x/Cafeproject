@@ -9,9 +9,6 @@ import Signup from "./pages/Signup";
 import AdminPanel from "./pages/AdminPanel";
 import { ToastContainer } from "react-toastify";
 
-
-
-
 function App() {
   return (
     <BrowserRouter>
@@ -19,25 +16,37 @@ function App() {
         <Route path="/" element={<Menu />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-          } />
-          <Route
-            path="/dashboard/menu"
-            element={
-              <ProtectedRoute>
-                <AdminPanel />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/google-success" element={<GoogleSuccess />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/menu"
+          element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/google-success" element={<GoogleSuccess />} />
         <Route path="/status" element={<OrderStatus />} />
       </Routes>
-      <ToastContainer position="top-center" autoClose={2500} hideProgressBar />
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        theme="dark"
+        toastStyle={{
+          width: window.innerWidth < 768 ? "400px" : "450px",
+          borderRadius: "16px",
+          margin: "0 auto",
+          marginTop: "20px",
+        }}
+        hideProgressBar
+      />
     </BrowserRouter>
   );
 }
