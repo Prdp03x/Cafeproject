@@ -6,7 +6,7 @@ import LogoutBtn from "../components/Common/LogoutBtn";
 import StatCard from "../components/Dashboard/StatCard";
 import socket from "../socket";
 import { useNavigate } from "react-router";
-import { FaEdit } from 'react-icons/fa'
+import { FaEdit } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const Dashboard = () => {
@@ -50,16 +50,28 @@ const Dashboard = () => {
 
     socket.emit("joinCafe", cafe.id);
 
+    // socket.on("newOrder", (order) => {
+    //   setOrders((prev) => [order, ...prev]);
+    // });
+
+    // socket.on("orderUpdated", ({ id, status }) => {
+    //   setOrders((prev) =>
+    //     prev.map((o) => (o._id === id ? { ...o, status } : o)),
+    //   );
+    // });
+
+    // socket.on("orderDeleted", (id) => {
+    //   setOrders((prev) => prev.filter((o) => o._id !== id));
+    // });
+
     socket.on("newOrder", (order) => {
       setOrders((prev) => [order, ...prev]);
     });
-
-    socket.on("orderUpdated", ({ id, status }) => {
+    socket.on("orderUpdated", (updatedOrder) => {
       setOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, status } : o)),
+        prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)),
       );
     });
-
     socket.on("orderDeleted", (id) => {
       setOrders((prev) => prev.filter((o) => o._id !== id));
     });
@@ -127,15 +139,15 @@ const Dashboard = () => {
       {/* 🔝 Top Bar */}
       <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
         <div className="flex gap-2 items-start">
-        <div className="h-10 w-10 rounded-full bg-green-800 flex items-center justify-center text-white font-semibold">
+          <div className="h-10 w-10 rounded-full bg-green-800 flex items-center justify-center text-white font-semibold">
             {cafe?.name?.charAt(0) || "C"}
           </div>
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            {cafe?.name || "Cafe"}
-          </h1>
-          <p className="text-sm text-gray-500">Kitchen Dashboard</p>
-        </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              {cafe?.name || "Cafe"}
+            </h1>
+            <p className="text-sm text-gray-500">Kitchen Dashboard</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

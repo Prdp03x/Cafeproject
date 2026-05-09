@@ -5,6 +5,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const http = require("http");
 const { Server } = require("socket.io");
+const { globalLimiter } = require("./middleware/rateLimiters");
+
 
 const connectDB = require("./config/db");
 
@@ -69,6 +71,8 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(globalLimiter);
+
 
 // Routes
 app.use("/api/menu", menuRoutes);

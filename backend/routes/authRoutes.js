@@ -5,6 +5,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const auth = require("../middleware/auth");
+const { loginLimiter } = require("../middleware/rateLimiters");
+
 
 const buildAuthResponse = (cafe) => {
   const cafeId = cafe._id.toString();
@@ -27,7 +29,7 @@ const buildAuthResponse = (cafe) => {
 
 
 // ================== SIGNUP ==================
-router.post("/signup", async (req, res) => {
+router.post("/signup", loginLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -80,7 +82,7 @@ router.get("/me", auth, async (req, res) => {
 
 
 // ================== LOGIN ==================
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 

@@ -68,7 +68,6 @@ exports.getAdminOrders = async (req, res) => {
     }).sort({ createdAt: -1 });
 
     res.json(orders);
-
   } catch (err) {
     console.error(err); // 🔥 useful for debugging
     res.status(500).json({ error: "Internal server error" });
@@ -111,20 +110,28 @@ exports.updateOrder = async (req, res) => {
     const updatedOrder = await Order.findOneAndUpdate(
       { _id: req.params.id, cafeId: req.cafeId },
       { status },
-      { returnDocument: true }
+      { returnDocument: true },
     );
 
     if (!updatedOrder) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    const io = req.app.get("io");
-    io.to(req.cafeId.toString()).emit("orderUpdated", {
-      id: req.params.id,
-      status,
-    });
+    // const io = req.app.get("io");
+    // io.to(req.cafeId.toString()).emit("orderUpdated", {
+    //   id: req.params.id,
+    //   status,
+    // });
 
-    res.json({ message: "Order updated" });
+    // res.json({ message: "Order updated" });
+    const io = req.app.get("io");
+
+    io.to(req.cafeId.toString()).emit("orderUpdated", updatedOrder);
+
+    res.json({
+      message: "Order updated",
+      order: updatedOrder,
+    });
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }
