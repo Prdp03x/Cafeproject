@@ -8,6 +8,7 @@ if (!baseURL) {
   throw new Error("❌ API URL missing in production");
 }
 
+console.log("API URL:", import.meta.env.VITE_API_URL);
 const API = axios.create({ baseURL });
 
 export const signup = (data) => API.post("/auth/signup", data);
