@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { FiArrowLeft, FiClock, FiRefreshCw, FiShoppingBag } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiClock,
+  FiRefreshCw,
+  FiShoppingBag,
+} from "react-icons/fi";
 import API from "../api/api";
 import socket from "../socket";
 
@@ -163,7 +168,8 @@ const OrderStatus = () => {
 
   const sortedOrders = [...orders].sort(
     (firstOrder, secondOrder) =>
-      new Date(secondOrder.createdAt || 0) - new Date(firstOrder.createdAt || 0),
+      new Date(secondOrder.createdAt || 0) -
+      new Date(firstOrder.createdAt || 0),
   );
   const activeCount = orders.filter(
     (order) => !["completed", "cancelled"].includes(order.status),
@@ -173,7 +179,10 @@ const OrderStatus = () => {
       sum + order.items.reduce((itemSum, item) => itemSum + (item.qty || 0), 0),
     0,
   );
-  const totalPayable = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const totalPayable = orders.reduce(
+    (sum, order) => sum + (order.total || 0),
+    0,
+  );
 
   return (
     <div className="min-h-screen bg-[#f6f1e8] px-4 py-5 text-slate-900 sm:px-5">
@@ -181,8 +190,10 @@ const OrderStatus = () => {
         <section className="rounded-[28px] border border-white/70 bg-white/88 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <button
-              onClick={() => navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-stone-100"
+              onClick={() =>
+                navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)
+              }
+              className="inline-flex items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-stone-100 cursor-pointer"
             >
               <FiArrowLeft />
               Menu
@@ -215,14 +226,18 @@ const OrderStatus = () => {
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
                 Active
               </p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">{activeCount}</p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">
+                {activeCount}
+              </p>
             </div>
 
             <div className="rounded-[20px] border border-stone-200 bg-stone-50 px-3 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
                 Items
               </p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">{totalItems}</p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">
+                {totalItems}
+              </p>
             </div>
 
             <div className="rounded-[20px] border border-stone-200 bg-stone-50 px-3 py-3">
@@ -261,7 +276,9 @@ const OrderStatus = () => {
               Place an order from the menu and it will appear here.
             </p>
             <button
-              onClick={() => navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)}
+              onClick={() =>
+                navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)
+              }
               className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               <FiArrowLeft />
@@ -271,7 +288,8 @@ const OrderStatus = () => {
         ) : (
           <div className="space-y-4">
             {sortedOrders.map((order) => {
-              const currentStatus = statusConfig[order.status] || statusConfig.pending;
+              const currentStatus =
+                statusConfig[order.status] || statusConfig.pending;
 
               return (
                 <article
@@ -308,7 +326,7 @@ const OrderStatus = () => {
                       />
                     </div>
 
-                    <div className="mt-4 divide-y divide-stone-200 rounded-[22px] border border-stone-200 bg-stone-50">
+                    <div className="mt-4">
                       {order.items.map((item, index) => {
                         const extras =
                           item.selectedOptions?.reduce(
@@ -317,18 +335,22 @@ const OrderStatus = () => {
                           ) || 0;
                         const lineTotal = (item.price + extras) * item.qty;
 
+                        const extraOpt =
+                          item.selectedOptions?.map((opt) => opt.name) || [];
+
                         return (
                           <div
                             key={`${order._id}-${index}`}
-                            className="px-4 py-3"
+                            className="px-4 pt-4"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-slate-950">
+                                  {item.qty}{" "}
+                                  <span className="font-normal text-slate-500">
+                                    x
+                                  </span>{" "}
                                   {item.name}
-                                </p>
-                                <p className="mt-1 text-xs text-slate-500">
-                                  Qty {item.qty}
                                 </p>
                               </div>
 
@@ -338,15 +360,12 @@ const OrderStatus = () => {
                             </div>
 
                             {item.selectedOptions?.length ? (
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {item.selectedOptions.map((option, optionIndex) => (
-                                  <span
-                                    key={`${order._id}-${index}-${optionIndex}`}
-                                    className="rounded-full bg-white px-2 py-1 text-[11px] text-slate-600"
-                                  >
-                                    {option.name} +{formatCurrency(option.price)}
-                                  </span>
-                                ))}
+                              <div className="mt-0 flex flex-wrap gap-1.5">
+                                {extraOpt.length ? (
+                                  <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">
+                                    + {extraOpt.join(", ")}
+                                  </p>
+                                ) : null}
                               </div>
                             ) : null}
                           </div>

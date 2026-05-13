@@ -237,7 +237,7 @@ const Dashboard = () => {
 
       <div className="flex min-h-screen">
         <aside
-          className={`fixed left-0 top-0 z-50 h-screen w-[88vw] max-w-[340px] transform transition-transform duration-300 md:static md:w-[320px] md:max-w-none md:translate-x-0 ${
+          className={`fixed left-0 top-0 z-50 h-screen w-[88vw] max-w-[340px] transform transition-transform duration-300 md:w-[320px] md:max-w-none md:translate-x-0 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -360,7 +360,7 @@ const Dashboard = () => {
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col md:ml-[320px]">
           <header className="sticky top-0 z-30 px-4 pb-2 pt-4 sm:px-6 lg:px-8">
             <div className="rounded-[30px] border border-white/75 bg-white/70 px-4 py-4 shadow-[0_24px_70px_rgba(15,23,42,0.07)] backdrop-blur sm:px-6">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">

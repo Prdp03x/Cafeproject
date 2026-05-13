@@ -177,7 +177,7 @@ const OrderCard = ({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-900">
                       <span className="font-bold">
-                        {item.qty}×
+                        {item.qty} x
                       </span>{" "}
                       {item.name}
                     </p>
