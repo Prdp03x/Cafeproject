@@ -128,7 +128,8 @@ const Menu = () => {
       <div className="p-4 pb-0 z-50 bg-gray-50 shadow-md">
         <div className="max-w-7xl mx-auto">
           <Header
-            brand={{ name: cafe?.name || "Cafe Delight" }}
+            brand={cafe}
+            loading={!cafe}
             cartCount={cartItemCount}
             onCartClick={() => setShowCart(true)}
           />
@@ -175,10 +176,9 @@ const Menu = () => {
         </div>
       </div>
 
-      {/* 🔹 Toast */}
 
       {/* 🔹 Main Content */}
-      <div className="p-4 pb-28">
+      <div className="p-4 pb-4">
         <TopActions
           orderCount={orderCount}
           cartLength={cartItemCount}

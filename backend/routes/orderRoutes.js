@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const { orderLimiter } = require("../middleware/rateLimiters");
+const adminOnly = require("../middleware/adminOnly");
 
 const {
   createOrder,
@@ -16,16 +17,16 @@ const {
 router.post("/", orderLimiter,createOrder);
 
 // ADMIN
-router.get("/admin", auth, getAdminOrders);
+router.get("/admin", auth, adminOnly, getAdminOrders);
 
 // CUSTOMER
 router.get("/customer", getCustomerOrders);
 
 // UPDATE
-router.put("/:id", auth, updateOrder);
+router.put("/:id", auth, adminOnly, updateOrder);
 
 // DELETE
-router.delete("/:id", auth, deleteOrder);
+router.delete("/:id", auth, adminOnly, deleteOrder);
 
 // GET SINGLE
 router.get("/:id", getOrderById);

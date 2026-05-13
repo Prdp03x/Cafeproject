@@ -1,234 +1,84 @@
-// import { useCallback, useEffect, useState } from "react";
-// import { useNavigate, useSearchParams } from "react-router";
-// import EmptyState from "../components/Common/EmptyState";
-// import API from "../api/api";
-// import socket from "../socket";
-
-// const OrderStatus = () => {
-//   const [orders, setOrders] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   const navigate = useNavigate();
-//   const [params] = useSearchParams();
-
-//   const cafeId = params.get("cafe");
-//   const tableNumber = params.get("table");
-
-//   useEffect(() => {
-//     document.title = "Your Orders | My Cafe";
-//   }, []);
-
-//   // Fetch customer orders
-//   const fetchOrders = useCallback(async () => {
-//     try {
-//       setLoading(true);
-
-//       if (!cafeId || !tableNumber) {
-//         console.warn("Missing cafeId or tableNumber");
-//         setOrders([]);
-//         return;
-//       }
-
-//       const res = await API.get("/orders/customer", {
-//         params: { cafeId, tableNumber },
-//       });
-
-//       if (Array.isArray(res.data)) {
-//         setOrders(res.data);
-//       } else if (Array.isArray(res.data.orders)) {
-//         setOrders(res.data.orders);
-//       } else {
-//         console.error("Invalid orders response:", res.data);
-//         setOrders([]);
-//       }
-//     } catch (err) {
-//       console.error("Error fetching orders:", err);
-//       setOrders([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, [cafeId, tableNumber]);
-
-//   // Initial fetch
-//   useEffect(() => {
-//     if (!cafeId || !tableNumber) return;
-
-//     fetchOrders();
-//   }, [cafeId, tableNumber, fetchOrders]);
-
-//   // Realtime socket updates
-//   useEffect(() => {
-//     if (!cafeId) return;
-
-//     socket.emit("joinCafe", cafeId);
-
-//     socket.on("orderUpdated", () => {
-//       fetchOrders();
-//     });
-
-//     socket.on("orderDeleted", (deletedOrderId) => {
-//       setOrders((prevOrders) =>
-//         prevOrders.filter(
-//           (order) => order._id !== deletedOrderId
-//         )
-//       );
-//     });
-
-//     return () => {
-//       socket.off("orderUpdated");
-//       socket.off("orderDeleted");
-//     };
-//   }, [cafeId, fetchOrders]);
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-5">
-//       <div className="max-w-xl mx-auto">
-//         {/* Header */}
-//         <div className="flex justify-between items-center mb-6">
-//           <h1 className="text-3xl font-bold tracking-tight">
-//             🧾 Your Orders
-//           </h1>
-
-//           <button
-//             onClick={() =>
-//               navigate(`/?cafe=${cafeId}&table=${tableNumber}`)
-//             }
-//             className="bg-black text-white px-5 py-2 rounded-full shadow hover:scale-105 transition"
-//           >
-//             ← Menu
-//           </button>
-//         </div>
-
-//         {/* Loading */}
-//         {loading ? (
-//           <div className="flex justify-center items-center py-20">
-//             <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-//           </div>
-//         ) : orders.length === 0 ? (
-//           <EmptyState
-//             title="No Active Orders"
-//             subtitle="Place your order from the menu 🍽️"
-//           />
-//         ) : (
-//           orders.map((order) => (
-//             <div
-//               key={order._id}
-//               className="backdrop-blur-lg bg-white/70 border border-white/30 rounded-3xl shadow-lg p-6 mb-6 hover:shadow-xl transition"
-//             >
-//               {/* Order ID */}
-//               <p className="text-xs text-gray-500 mb-3">
-//                 Order #{order._id.slice(-6)}
-//               </p>
-
-//               {/* Items */}
-//               {order.items.map((item, i) => {
-//                 const extras =
-//                   item.selectedOptions?.reduce(
-//                     (s, o) => s + o.price,
-//                     0
-//                   ) || 0;
-
-//                 const itemTotal =
-//                   (item.price + extras) * item.qty;
-
-//                 return (
-//                   <div key={i} className="mb-3">
-//                     <div className="flex justify-between font-medium">
-//                       <span>
-//                         {item.name}{" "}
-//                         <span className="text-gray-400">
-//                           ×{item.qty}
-//                         </span>
-//                       </span>
-
-//                       <span>₹{itemTotal}</span>
-//                     </div>
-
-//                     {/* Options */}
-//                     {item.selectedOptions?.map((opt, idx) => (
-//                       <p
-//                         key={idx}
-//                         className="text-xs text-gray-500 ml-3"
-//                       >
-//                         + {opt.name} (₹{opt.price})
-//                       </p>
-//                     ))}
-//                   </div>
-//                 );
-//               })}
-
-//               {/* Total */}
-//               <div className="flex justify-between font-bold text-lg mt-4 border-t pt-3">
-//                 <span>Total</span>
-//                 <span>₹{order.total}</span>
-//               </div>
-
-//               {/* Status */}
-//               <div className="mt-5 flex items-center justify-between">
-//                 <span
-//                   className={`px-4 py-1 rounded-full text-white text-sm capitalize ${
-//                     order.status === "completed"
-//                       ? "bg-green-500"
-//                       : order.status === "preparing"
-//                       ? "bg-yellow-500 animate-pulse"
-//                       : "bg-gray-400"
-//                   }`}
-//                 >
-//                   {order.status || "pending"}
-//                 </span>
-
-//                 {order.status === "completed" && (
-//                   <span className="text-green-600 font-medium text-sm animate-bounce">
-//                     ✅ Ready to serve
-//                   </span>
-//                 )}
-
-//                 {order.status === "preparing" && (
-//                   <span className="text-yellow-600 text-sm flex items-center gap-1">
-//                     👨‍🍳 Cooking...
-//                   </span>
-//                 )}
-
-//                 {order.status === "pending" && (
-//                   <span className="text-gray-500 text-sm">
-//                     🕒 Waiting...
-//                   </span>
-//                 )}
-//               </div>
-
-//               {/* Progress Bar */}
-//               <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-//                 <div
-//                   className={`h-full transition-all duration-500 ${
-//                     order.status === "completed"
-//                       ? "w-full bg-green-500"
-//                       : order.status === "preparing"
-//                       ? "w-2/3 bg-yellow-500"
-//                       : "w-1/4 bg-gray-400"
-//                   }`}
-//                 />
-//               </div>
-//             </div>
-//           ))
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default OrderStatus;
-
-
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import EmptyState from "../components/Common/EmptyState";
+import { FiArrowLeft, FiClock, FiRefreshCw, FiShoppingBag } from "react-icons/fi";
 import API from "../api/api";
 import socket from "../socket";
+
+const formatCurrency = (value) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+
+const formatTime = (value) => {
+  if (!value) return "Recently";
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Recently";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsedDate);
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "Not available";
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Not available";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsedDate);
+};
+
+const statusConfig = {
+  pending: {
+    label: "Pending",
+    badge: "border-amber-200 bg-amber-50 text-amber-800",
+    accent: "bg-amber-500",
+    progress: "w-1/3",
+    summary: "The cafe has received your order.",
+  },
+  preparing: {
+    label: "Preparing",
+    badge: "border-sky-200 bg-sky-50 text-sky-800",
+    accent: "bg-sky-500",
+    progress: "w-2/3",
+    summary: "Your order is being prepared now.",
+  },
+  completed: {
+    label: "Completed",
+    badge: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    accent: "bg-emerald-500",
+    progress: "w-full",
+    summary: "Your order is ready.",
+  },
+  cancelled: {
+    label: "Cancelled",
+    badge: "border-rose-200 bg-rose-50 text-rose-800",
+    accent: "bg-rose-500",
+    progress: "w-full",
+    summary: "This order was cancelled by the cafe.",
+  },
+};
 
 const OrderStatus = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -240,201 +90,290 @@ const OrderStatus = () => {
     document.title = "Your Orders | My Cafe";
   }, []);
 
-  // Fetch customer orders
-  const fetchOrders = useCallback(async () => {
-    try {
-      if (!initialLoaded) {
-        setLoading(true);
-      }
-
+  const fetchOrders = useCallback(
+    async ({ silent = false } = {}) => {
       if (!cafeId || !tableNumber) {
-        console.warn("Missing cafeId or tableNumber");
         setOrders([]);
+        setError("Missing cafe or table details.");
+        setLoading(false);
+        setRefreshing(false);
         return;
       }
 
-      const res = await API.get("/orders/customer", {
-        params: { cafeId, tableNumber },
-      });
-
-      if (Array.isArray(res.data)) {
-        setOrders(res.data);
-      } else if (Array.isArray(res.data.orders)) {
-        setOrders(res.data.orders);
+      if (silent) {
+        setRefreshing(true);
       } else {
-        console.error("Invalid orders response:", res.data);
-        setOrders([]);
+        setLoading(true);
       }
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-      setInitialLoaded(true);
-    }
-  }, [cafeId, tableNumber, initialLoaded]);
 
-  // Initial fetch
+      try {
+        const res = await API.get("/orders/customer", {
+          params: { cafeId, tableNumber },
+        });
+
+        const nextOrders = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.orders)
+            ? res.data.orders
+            : [];
+
+        setOrders(nextOrders);
+        setError("");
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+        setOrders([]);
+        setError("Unable to load your active orders right now.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [cafeId, tableNumber],
+  );
+
   useEffect(() => {
-    if (!cafeId || !tableNumber) return;
+    void fetchOrders();
+  }, [fetchOrders]);
 
-    fetchOrders();
-  }, [cafeId, tableNumber, fetchOrders]);
-
-  // Realtime socket updates
   useEffect(() => {
     if (!cafeId) return;
 
     socket.emit("joinCafe", cafeId);
 
-    socket.on("orderUpdated", () => {
-      fetchOrders();
-    });
+    const handleOrderUpdated = () => {
+      void fetchOrders({ silent: true });
+    };
 
-    socket.on("orderDeleted", (deletedOrderId) => {
+    const handleOrderDeleted = (deletedOrderId) => {
       setOrders((prevOrders) =>
-        prevOrders.filter(
-          (order) => order._id !== deletedOrderId
-        )
+        prevOrders.filter((order) => order._id !== deletedOrderId),
       );
-    });
+    };
+
+    socket.on("newOrder", handleOrderUpdated);
+    socket.on("orderUpdated", handleOrderUpdated);
+    socket.on("orderDeleted", handleOrderDeleted);
 
     return () => {
-      socket.off("orderUpdated");
-      socket.off("orderDeleted");
+      socket.off("newOrder", handleOrderUpdated);
+      socket.off("orderUpdated", handleOrderUpdated);
+      socket.off("orderDeleted", handleOrderDeleted);
     };
   }, [cafeId, fetchOrders]);
 
+  const sortedOrders = [...orders].sort(
+    (firstOrder, secondOrder) =>
+      new Date(secondOrder.createdAt || 0) - new Date(firstOrder.createdAt || 0),
+  );
+  const activeCount = orders.filter(
+    (order) => !["completed", "cancelled"].includes(order.status),
+  ).length;
+  const totalItems = orders.reduce(
+    (sum, order) =>
+      sum + order.items.reduce((itemSum, item) => itemSum + (item.qty || 0), 0),
+    0,
+  );
+  const totalPayable = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-5">
-      <div className="max-w-xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">
-            🧾 Your Orders
-          </h1>
-
-          <button
-            onClick={() =>
-              navigate(`/?cafe=${cafeId}&table=${tableNumber}`)
-            }
-            className="bg-black text-white px-5 py-2 rounded-full shadow hover:scale-105 transition"
-          >
-            ← Menu
-          </button>
-        </div>
-
-        {/* Loading */}
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : orders.length === 0 ? (
-          <EmptyState
-            title="No Active Orders"
-            subtitle="Place your order from the menu 🍽️"
-          />
-        ) : (
-          orders.map((order) => (
-            <div
-              key={order._id}
-              className="backdrop-blur-lg bg-white/70 border border-white/30 rounded-3xl shadow-lg p-6 mb-6 hover:shadow-xl transition"
+    <div className="min-h-screen bg-[#f6f1e8] px-4 py-5 text-slate-900 sm:px-5">
+      <div className="mx-auto max-w-2xl space-y-4">
+        <section className="rounded-[28px] border border-white/70 bg-white/88 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-stone-100"
             >
-              {/* Order ID */}
-              <p className="text-xs text-gray-500 mb-3">
-                Order #{order._id.slice(-6)}
+              <FiArrowLeft />
+              Menu
+            </button>
+
+            <button
+              onClick={() => void fetchOrders({ silent: true })}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiRefreshCw className={refreshing ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Table {tableNumber || "--"}
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+              Your orders
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Live updates from the cafe. Refresh if you want to check again.
+            </p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2.5">
+            <div className="rounded-[20px] border border-stone-200 bg-stone-50 px-3 py-3">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                Active
               </p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">{activeCount}</p>
+            </div>
 
-              {/* Items */}
-              {order.items.map((item, i) => {
-                const extras =
-                  item.selectedOptions?.reduce(
-                    (s, o) => s + o.price,
-                    0
-                  ) || 0;
+            <div className="rounded-[20px] border border-stone-200 bg-stone-50 px-3 py-3">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                Items
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">{totalItems}</p>
+            </div>
 
-                const itemTotal =
-                  (item.price + extras) * item.qty;
+            <div className="rounded-[20px] border border-stone-200 bg-stone-50 px-3 py-3">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                Total
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">
+                {formatCurrency(totalPayable)}
+              </p>
+            </div>
+          </div>
+        </section>
 
-                return (
-                  <div key={i} className="mb-3">
-                    <div className="flex justify-between font-medium">
-                      <span>
-                        {item.name}{" "}
-                        <span className="text-gray-400">
-                          ×{item.qty}
-                        </span>
+        {error ? (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+            {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="flex min-h-[260px] items-center justify-center rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-11 w-11 animate-spin rounded-full border-4 border-slate-300 border-t-slate-900" />
+              <p className="text-sm text-slate-500">Loading your orders...</p>
+            </div>
+          </div>
+        ) : sortedOrders.length === 0 ? (
+          <div className="rounded-[28px] border border-dashed border-stone-300 bg-white/82 px-5 py-16 text-center shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 text-slate-700 shadow-inner">
+              <FiShoppingBag size={22} />
+            </div>
+            <h3 className="mt-4 text-xl font-semibold text-slate-900">
+              No active orders
+            </h3>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+              Place an order from the menu and it will appear here.
+            </p>
+            <button
+              onClick={() => navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)}
+              className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              <FiArrowLeft />
+              Go to menu
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sortedOrders.map((order) => {
+              const currentStatus = statusConfig[order.status] || statusConfig.pending;
+
+              return (
+                <article
+                  key={order._id}
+                  className="overflow-hidden rounded-[28px] border border-white/70 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+                >
+                  <div className={`h-1.5 w-full ${currentStatus.accent}`} />
+
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Order #{order._id.slice(-6).toUpperCase()}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Placed {formatDateTime(order.createdAt)}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold ${currentStatus.badge}`}
+                      >
+                        {currentStatus.label}
                       </span>
-
-                      <span>₹{itemTotal}</span>
                     </div>
 
-                    {/* Options */}
-                    {item.selectedOptions?.map((opt, idx) => (
-                      <p
-                        key={idx}
-                        className="text-xs text-gray-500 ml-3"
-                      >
-                        + {opt.name} (₹{opt.price})
+                    <p className="mt-4 text-sm leading-6 text-slate-600">
+                      {currentStatus.summary}
+                    </p>
+
+                    <div className="mt-3 h-2 rounded-full bg-stone-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${currentStatus.accent} ${currentStatus.progress}`}
+                      />
+                    </div>
+
+                    <div className="mt-4 divide-y divide-stone-200 rounded-[22px] border border-stone-200 bg-stone-50">
+                      {order.items.map((item, index) => {
+                        const extras =
+                          item.selectedOptions?.reduce(
+                            (sum, option) => sum + (option.price || 0),
+                            0,
+                          ) || 0;
+                        const lineTotal = (item.price + extras) * item.qty;
+
+                        return (
+                          <div
+                            key={`${order._id}-${index}`}
+                            className="px-4 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-950">
+                                  {item.name}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Qty {item.qty}
+                                </p>
+                              </div>
+
+                              <p className="shrink-0 text-sm font-semibold text-slate-950">
+                                {formatCurrency(lineTotal)}
+                              </p>
+                            </div>
+
+                            {item.selectedOptions?.length ? (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {item.selectedOptions.map((option, optionIndex) => (
+                                  <span
+                                    key={`${order._id}-${index}-${optionIndex}`}
+                                    className="rounded-full bg-white px-2 py-1 text-[11px] text-slate-600"
+                                  >
+                                    {option.name} +{formatCurrency(option.price)}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-stone-200 pt-4">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Total
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-slate-950">
+                          {formatCurrency(order.total)}
+                        </p>
+                      </div>
+
+                      <p className="inline-flex items-center gap-2 text-xs text-slate-500">
+                        <FiClock className="text-slate-400" />
+                        Updated {formatTime(order.updatedAt || order.createdAt)}
                       </p>
-                    ))}
+                    </div>
                   </div>
-                );
-              })}
-
-              {/* Total */}
-              <div className="flex justify-between font-bold text-lg mt-4 border-t pt-3">
-                <span>Total</span>
-                <span>₹{order.total}</span>
-              </div>
-
-              {/* Status */}
-              <div className="mt-5 flex items-center justify-between">
-                <span
-                  className={`px-4 py-1 rounded-full text-white text-sm capitalize ${
-                    order.status === "completed"
-                      ? "bg-green-500"
-                      : order.status === "preparing"
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-gray-400"
-                  }`}
-                >
-                  {order.status || "pending"}
-                </span>
-
-                {order.status === "completed" && (
-                  <span className="text-green-600 font-medium text-sm animate-bounce">
-                    ✅ Ready to serve
-                  </span>
-                )}
-
-                {order.status === "preparing" && (
-                  <span className="text-yellow-600 text-sm flex items-center gap-1">
-                    👨‍🍳 Cooking...
-                  </span>
-                )}
-
-                {order.status === "pending" && (
-                  <span className="text-gray-500 text-sm">
-                    🕒 Waiting...
-                  </span>
-                )}
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-[width] duration-700 ease-in-out ${
-                    order.status === "completed"
-                      ? "w-full bg-green-500"
-                      : order.status === "preparing"
-                      ? "w-2/3 bg-yellow-500"
-                      : "w-1/4 bg-gray-400"
-                  }`}
-                />
-              </div>
-            </div>
-          ))
+                </article>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/Common/ProtectedRoute";
 import Login from "./pages/Login";
 import GoogleSuccess from "./pages/GoogleSuccess";
 import Signup from "./pages/Signup";
+import Settings from "./pages/Settings";
 import AdminPanel from "./pages/AdminPanel";
 import { ToastContainer } from "react-toastify";
 
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Menu />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/settings" element={<Settings />} />
         <Route
           path="/dashboard"
           element={

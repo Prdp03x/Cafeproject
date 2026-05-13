@@ -1,3 +1,4 @@
+import { FiLogOut } from "react-icons/fi";
 import useLogout from "../../hooks/useLogout";
 
 const LogoutBtn = ({ className = "" }) => {
@@ -6,8 +7,9 @@ const LogoutBtn = ({ className = "" }) => {
   return (
     <button
       onClick={logout}
-      className={`bg-red-500 text-white px-4 py-2 rounded ${className}`}
+      className={`inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-rose-700 ${className}`}
     >
+      <FiLogOut size={16} />
       Logout
     </button>
   );

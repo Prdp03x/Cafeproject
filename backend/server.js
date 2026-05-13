@@ -14,6 +14,7 @@ const menuRoutes = require("./routes/menuRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
 const cafeRoutes = require("./routes/cafeRoutes")
+const dashboardMenuRoutes = require("./routes/dashboard/menuRoutes");
 
 const session = require("express-session");
 const passport = require("./config/passport");
@@ -64,7 +65,7 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(helmet());
 app.use(session({
-  secret: "secret",
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
 }));
@@ -79,6 +80,7 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cafes", cafeRoutes);
+app.use("/api/dashboard/menu", dashboardMenuRoutes);
 
 
 // 🔥 START SERVER (IMPORTANT CHANGE)
