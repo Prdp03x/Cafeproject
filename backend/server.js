@@ -23,16 +23,38 @@ const passport = require("./config/passport");
 const app = express();
 const server = http.createServer(app); // ✅ IMPORTANT
 
-const allowedOrigins = [
+const normalizeOrigin = (origin) => origin?.replace(/\/+$/, "");
+
+const parseOrigins = (...values) =>
+  values
+    .flatMap((value) => (value ? value.split(",") : []))
+    .map((value) => normalizeOrigin(value.trim()))
+    .filter(Boolean);
+
+const allowedOrigins = new Set([
   "http://localhost:5173",
-  "https://cafeproject-rho.vercel.app",
-];
+  "http://127.0.0.1:5173",
+  ...parseOrigins(
+    process.env.CLIENT_URL,
+    process.env.CLIENT_URL2,
+    process.env.CORS_ORIGINS,
+  ),
+]);
+
+const corsOrigin = (origin, callback) => {
+  if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
+    return callback(null, true);
+  }
+
+  return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+};
 
 // 🔥 SOCKET SETUP
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET","POST"],
+    origin: corsOrigin,
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -61,7 +83,7 @@ io.on("connection", (socket) => {
 });
 
 // Middleware
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json());
 app.use(helmet());
 app.use(session({
@@ -91,6 +113,7 @@ const startServer = async () => {
 
   server.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
+    console.log("Allowed CORS origins:", Array.from(allowedOrigins).join(", "));
   });
 };
 

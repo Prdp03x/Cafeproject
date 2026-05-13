@@ -50,41 +50,39 @@ const navItems = [
   },
 ];
 
-const DashboardNavButton = ({
-  active,
-  description,
-  icon: Icon,
-  label,
-  onClick,
-}) => (
-  <button
-    onClick={onClick}
-    className={`group flex w-full items-center gap-3 rounded-[22px] px-4 py-3 text-left transition ${
-      active
-        ? "bg-slate-900 text-white shadow-[0_16px_36px_rgba(15,23,42,0.18)]"
-        : "text-slate-700 hover:bg-stone-100"
-    }`}
-  >
-    <div
-      className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-        active ? "bg-white/12 text-white" : "bg-white text-slate-700 shadow-sm"
+const DashboardNavButton = ({ active, description, icon, label, onClick }) => {
+  const NavIcon = icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`group flex w-full items-center gap-3 rounded-[22px] px-4 py-3 text-left transition ${
+        active
+          ? "bg-slate-900 text-white shadow-[0_16px_36px_rgba(15,23,42,0.18)]"
+          : "text-slate-700 hover:bg-stone-100"
       }`}
     >
-      <Icon size={16} />
-    </div>
-
-    <div className="min-w-0">
-      <p className="text-sm font-semibold">{label}</p>
-      <p
-        className={`text-xs ${
-          active ? "text-white/70" : "text-slate-500 group-hover:text-slate-600"
+      <div
+        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+          active ? "bg-white/12 text-white" : "bg-white text-slate-700 shadow-sm"
         }`}
       >
-        {description}
-      </p>
-    </div>
-  </button>
-);
+        <NavIcon size={16} />
+      </div>
+
+      <div className="min-w-0">
+        <p className="text-sm font-semibold">{label}</p>
+        <p
+          className={`text-xs ${
+            active ? "text-white/70" : "text-slate-500 group-hover:text-slate-600"
+          }`}
+        >
+          {description}
+        </p>
+      </div>
+    </button>
+  );
+};
 
 const Dashboard = () => {
   const {

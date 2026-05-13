@@ -1,24 +1,37 @@
 import axios from "axios";
 
-const baseURL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "http://localhost:5000/api" : null);
+const trimTrailingSlash = (value) => value?.replace(/\/+$/, "");
 
-if (!baseURL) {
-  throw new Error("❌ API URL missing in production");
-}
+const resolveApiBaseUrl = () => {
+  const envBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_URL);
 
-console.log("API URL:", import.meta.env.VITE_API_URL);
-const API = axios.create({ baseURL });
+  if (envBaseUrl) {
+    return envBaseUrl;
+  }
+
+  if (import.meta.env.DEV) {
+    return "http://localhost:5000/api";
+  }
+
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/api`;
+  }
+
+  throw new Error("API URL missing in production");
+};
+
+const API = axios.create({
+  baseURL: resolveApiBaseUrl(),
+});
 
 export const signup = (data) => API.post("/auth/signup", data);
 export const login = (data) => API.post("/auth/login", data);
 
-// 🔥 Add interceptor
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
   if (token) {
+    config.headers ||= {};
     config.headers.Authorization = `Bearer ${token}`;
   }
 

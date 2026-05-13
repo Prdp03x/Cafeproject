@@ -9,6 +9,9 @@ const inputClass =
 const sectionTitleClass = "text-sm font-semibold text-slate-900";
 const sectionHintClass = "mt-1 text-xs text-slate-500";
 
+const getErrorMessage = (error, fallbackMessage) =>
+  error?.response?.data?.error || error?.message || fallbackMessage;
+
 const AddItemModal = ({ onClose, refresh, editItem }) => {
   const [options, setOptions] = useState(() => editItem?.options || []);
   const [form, setForm] = useState(() => ({
@@ -116,7 +119,7 @@ const AddItemModal = ({ onClose, refresh, editItem }) => {
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save item");
+      toast.error(getErrorMessage(err, "Failed to save item"));
     } finally {
       setLoading(false);
     }
@@ -139,7 +142,7 @@ const AddItemModal = ({ onClose, refresh, editItem }) => {
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete item");
+      toast.error(getErrorMessage(err, "Failed to delete item"));
     } finally {
       setDeleting(false);
     }

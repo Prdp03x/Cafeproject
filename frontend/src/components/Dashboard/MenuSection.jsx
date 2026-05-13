@@ -10,6 +10,9 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const getErrorMessage = (error) =>
+  error?.response?.data?.error || error?.message || "Failed to fetch menu";
+
 const MenuSection = () => {
   const [menu, setMenu] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -19,8 +22,9 @@ const MenuSection = () => {
     try {
       const res = await API.get("/dashboard/menu");
       setMenu(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast.error("Failed to fetch menu");
+    } catch (error) {
+      console.error("Dashboard menu fetch failed", error);
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -31,12 +35,18 @@ const MenuSection = () => {
       try {
         const res = await API.get("/dashboard/menu");
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         setMenu(Array.isArray(res.data) ? res.data : []);
-      } catch {
-        if (!isMounted) return;
-        toast.error("Failed to fetch menu");
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error("Dashboard menu fetch failed", error);
+        toast.error(getErrorMessage(error));
       }
     };
 

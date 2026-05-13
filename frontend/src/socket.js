@@ -1,13 +1,27 @@
 import { io } from "socket.io-client";
 
-const socketUrl =
-  import.meta.env.VITE_SOCKET_URL ||
-  (import.meta.env.DEV ? "http://localhost:5000" : undefined);
+const trimTrailingSlash = (value) => value?.replace(/\/+$/, "");
 
-const socket = io(socketUrl, {
+const resolveSocketUrl = () => {
+  const envSocketUrl = trimTrailingSlash(import.meta.env.VITE_SOCKET_URL);
+
+  if (envSocketUrl) {
+    return envSocketUrl;
+  }
+
+  if (import.meta.env.DEV) {
+    return "http://localhost:5000";
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  return undefined;
+};
+
+const socket = io(resolveSocketUrl(), {
   transports: ["websocket", "polling"],
 });
 
 export default socket;
-
-// console.log("SOCKET URL:", import.meta.env.VITE_SOCKET_URL);
