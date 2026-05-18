@@ -39,9 +39,9 @@ const PlaceOrderButton = ({ placeOrder, disabled, tableNumber }) => {
 
   const getStyle = () => {
     if (!tableNumber) return "bg-gray-400 cursor-not-allowed";
-    if (status === "success") return "bg-green-800 scale-95";
+    if (status === "success") return "theme-primary scale-95";
     if (status === "loading") return "bg-gray-400 cursor-not-allowed";
-    return "bg-green-800 hover:bg-green-600";
+    return "theme-primary theme-primary-hover";
   };
 
   return (

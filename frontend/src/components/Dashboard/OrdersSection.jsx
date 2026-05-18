@@ -41,6 +41,64 @@ const OrdersSection = ({
     return new Date(secondOrder.createdAt || 0) - new Date(firstOrder.createdAt || 0);
   });
 
+  const stats2 = [
+  {
+    title: "Total tickets",
+    value: orders.length,
+    cardClass:
+      "border-white/70 bg-white/82",
+    titleClass:
+      "text-slate-400",
+    valueClass:
+      "text-slate-900",
+  },
+  {
+    title: "Pending",
+    value: pendingCount,
+    cardClass:
+      "border-amber-200 bg-amber-50/90",
+    titleClass:
+      "text-amber-700",
+    valueClass:
+      "text-amber-900",
+  },
+  {
+    title: "Preparing",
+    value: preparingCount,
+    cardClass:
+      "border-blue-200 bg-blue-50/90",
+    titleClass:
+      "text-blue-700",
+    valueClass:
+      "text-blue-900",
+  },
+  {
+    title: "Completed",
+    value: completedCount,
+    cardClass:
+      "border-emerald-200 bg-emerald-50/90",
+    titleClass:
+      "text-emerald-700",
+    valueClass:
+      "text-emerald-900",
+  },
+];
+
+const stats = [
+  {
+    title: "Orders in queue",
+    value: orders.length,
+  },
+  {
+    title: "Average ticket",
+    value: formatCurrency(averageTicket),
+  },
+  {
+    title: "Visible revenue",
+    value: formatCurrency(revenue),
+  },
+];
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-[32px] border border-white/70 bg-[linear-gradient(135deg,#17212e_0%,#253244_50%,#34514a_100%)] p-6 text-white shadow-[0_28px_90px_rgba(15,23,42,0.16)] md:p-7">
@@ -60,68 +118,34 @@ const OrdersSection = ({
 
     {/* Stats Grid */}
     <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
-      <div className="rounded-[24px] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur">
+      {stats.map((item, index) => (
+      <div
+        key={index}
+        className="rounded-[24px] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur">
         <p className="text-[11px] uppercase tracking-[0.18em] text-white/60">
-          Orders in queue
+          {item.title}
         </p>
-
         <p className="mt-2 text-3xl font-semibold">
-          {orders.length}
+          {item.value}
         </p>
       </div>
-
-      <div className="rounded-[24px] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-white/60">
-          Average ticket
-        </p>
-
-        <p className="mt-2 text-3xl font-semibold">
-          {formatCurrency(averageTicket)}
-        </p>
-      </div>
-
-      <div className="rounded-[24px] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-white/60">
-          Visible revenue
-        </p>
-
-        <p className="mt-2 text-3xl font-semibold">
-          {formatCurrency(revenue)}
-        </p>
-      </div>
+    ))}
     </div>
   </div>
 </section>
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-[28px] border border-white/70 bg-white/82 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Total tickets
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{orders.length}</p>
-        </div>
-
-        <div className="rounded-[28px] border border-amber-200 bg-amber-50/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
-            Pending
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-amber-900">{pendingCount}</p>
-        </div>
-
-        <div className="rounded-[28px] border border-blue-200 bg-blue-50/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">
-            Preparing
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-blue-900">{preparingCount}</p>
-        </div>
-
-        <div className="rounded-[28px] border border-emerald-200 bg-emerald-50/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-            Completed
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-emerald-900">
-            {completedCount}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
+        {stats2.map((item, index) => (
+      <div
+        key={index}
+        className={`flex flex-col justify-between rounded-xl md:rounded-[28px] border p-3 md:px-5 md:py-4 shadow-[0_20px_60px_rgba(15,23,42,0.05)] ${item.cardClass}`} >
+        <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${item.titleClass}`} >
+          {item.title}
+        </p>
+        <p className={`mt-2 text-3xl font-semibold ${item.valueClass}`}>
+          {item.value}
+        </p>
+      </div>
+    ))}
       </div>
 
       <section className="rounded-[32px] border border-white/70 bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.07)] md:p-6">

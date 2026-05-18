@@ -1,9 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import API from "../../api/api";
 import { toast } from "react-toastify";
 import { HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
+import useAuth from "../../hooks/useAuth";
 
 const ChangePasswordModal = ({ onClose }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,12 +28,8 @@ const ChangePasswordModal = ({ onClose }) => {
       });
 
       toast.success(res.data.message);
-
-      // Optional logout after password change
-      localStorage.removeItem("token");
-      localStorage.removeItem("cafe");
-
-      window.location.href = "/login";
+      logout();
+      navigate("/login");
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to change password");
     } finally {
@@ -122,7 +122,7 @@ const ChangePasswordModal = ({ onClose }) => {
           <button
             onClick={handleChangePassword}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-black text-white"
+            className="theme-primary theme-primary-hover px-4 py-2 rounded-lg text-white"
           >
             {loading ? "Updating..." : "Update"}
           </button>

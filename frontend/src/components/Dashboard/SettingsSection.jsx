@@ -9,6 +9,14 @@ import {
   FiShield,
   FiTable,
 } from "react-icons/fi";
+import {
+  brandingFieldNames,
+  businessFieldNames,
+  defaultSettingsForm,
+  mapSettingsToForm,
+  normalizeSettingsPayload,
+  validateBusinessSettings,
+} from "../../utils/settingsForm";
 
 const tabConfig = {
   branding: {
@@ -30,16 +38,7 @@ const tabConfig = {
 
 const SettingsSection = ({ updateCafeData }) => {
   const [activeTab, setActiveTab] = useState("branding");
-  const [form, setForm] = useState({
-    name: "",
-    ownerName: "",
-    phone: "",
-    description: "",
-    category: "",
-    logo: "",
-    themeColor: "#14532d",
-    totalTables: 10,
-  });
+  const [form, setForm] = useState(defaultSettingsForm);
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -55,16 +54,7 @@ const SettingsSection = ({ updateCafeData }) => {
 
         if (!isMounted) return;
 
-        setForm({
-          name: res.data.name || "",
-          ownerName: res.data.ownerName || "",
-          phone: res.data.phone || "",
-          description: res.data.description || "",
-          category: res.data.category || "",
-          logo: res.data.logo || "",
-          themeColor: res.data.themeColor || "#14532d",
-          totalTables: res.data.totalTables || 10,
-        });
+        setForm(mapSettingsToForm(res.data));
       } catch {
         if (!isMounted) return;
         toast.error("Failed to load settings");
@@ -89,12 +79,23 @@ const SettingsSection = ({ updateCafeData }) => {
 
   const handleSave = async () => {
     try {
+      if (activeTab === "business") {
+        const validationError = validateBusinessSettings(form);
+
+        if (validationError) {
+          toast.error(validationError);
+          return;
+        }
+      }
+
       setLoading(true);
 
-      const res = await API.put("/auth/settings", {
-        ...form,
-        totalTables: Number(form.totalTables) || 0,
-      });
+      const fieldNames =
+        activeTab === "branding" ? brandingFieldNames : businessFieldNames;
+      const res = await API.put(
+        "/auth/settings",
+        normalizeSettingsPayload(form, fieldNames)
+      );
 
       toast.success(res.data.message);
       updateCafeData(res.data.cafe);
@@ -154,7 +155,7 @@ const SettingsSection = ({ updateCafeData }) => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-slate-900 text-xl font-semibold text-white">
+                  <div className="theme-primary flex h-full w-full items-center justify-center text-xl font-semibold text-white">
                     {form.name?.charAt(0)?.toUpperCase() || "C"}
                   </div>
                 )}
@@ -221,7 +222,7 @@ const SettingsSection = ({ updateCafeData }) => {
                     onClick={() => setActiveTab(key)}
                     className={`flex w-full items-start gap-3 rounded-[24px] px-4 py-4 text-left transition ${
                       activeTab === key
-                        ? "bg-slate-900 text-white shadow-[0_16px_36px_rgba(15,23,42,0.18)]"
+                        ? "theme-primary theme-primary-elevated theme-primary-hover text-white"
                         : "hover:bg-stone-100"
                     }`}
                   >
@@ -370,6 +371,7 @@ const SettingsSection = ({ updateCafeData }) => {
                   placeholder="Owner Name"
                   value={form.ownerName}
                   onChange={handleChange}
+                  required
                 />
 
                 <FormField
@@ -379,6 +381,8 @@ const SettingsSection = ({ updateCafeData }) => {
                   placeholder="Phone"
                   value={form.phone}
                   onChange={handleChange}
+                  required
+                  hint="Used as the primary billing contact number."
                 />
 
                 <FormField
@@ -398,6 +402,100 @@ const SettingsSection = ({ updateCafeData }) => {
                   value={form.totalTables}
                   onChange={handleChange}
                 />
+              </div>
+
+              <div className="rounded-[28px] border border-stone-200 bg-stone-50 p-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">Billing profile</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Keep invoice-ready information complete for tax and payment records.
+                  </p>
+                </div>
+
+                <div className="mt-5 grid gap-5 md:grid-cols-2">
+                  <FormField
+                    label="Legal business name"
+                    type="text"
+                    name="legalBusinessName"
+                    placeholder="Registered business name"
+                    value={form.legalBusinessName}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  <FormField
+                    label="Billing email"
+                    type="email"
+                    name="billingEmail"
+                    placeholder="billing@example.com"
+                    value={form.billingEmail}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  <FormField
+                    label="GST number"
+                    type="text"
+                    name="gstNumber"
+                    placeholder="22AAAAA0000A1Z5"
+                    value={form.gstNumber}
+                    onChange={handleChange}
+                    required
+                    hint="Use the registered 15-character GSTIN."
+                  />
+
+                  <FormField
+                    label="Country"
+                    type="text"
+                    name="country"
+                    placeholder="India"
+                    value={form.country}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  <div className="md:col-span-2">
+                    <FormField
+                      label="Address"
+                      textarea
+                      name="address"
+                      placeholder="Street address, area, and landmark"
+                      value={form.address}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <FormField
+                    label="City"
+                    type="text"
+                    name="city"
+                    placeholder="City"
+                    value={form.city}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  <FormField
+                    label="State"
+                    type="text"
+                    name="state"
+                    placeholder="State"
+                    value={form.state}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  <FormField
+                    label="Postal code"
+                    type="text"
+                    name="postalCode"
+                    placeholder="Postal code"
+                    value={form.postalCode}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -470,7 +568,7 @@ const SettingsSection = ({ updateCafeData }) => {
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={handleChangePassword}
-                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="theme-primary theme-primary-hover rounded-2xl px-5 py-3 text-sm font-semibold text-white"
                 >
                   Update Password
                 </button>
@@ -490,7 +588,7 @@ const SettingsSection = ({ updateCafeData }) => {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="theme-primary theme-primary-hover rounded-2xl px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save Changes"}
               </button>

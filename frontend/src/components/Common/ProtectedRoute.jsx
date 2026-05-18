@@ -1,9 +1,18 @@
 import { Navigate } from "react-router";
+import useAuth from "../../hooks/useAuth";
 
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
+  const { isAuthenticated, isReady } = useAuth();
 
-  if (!token) {
+  if (!isReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f4efe6] text-sm text-slate-500">
+        Loading workspace...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
 

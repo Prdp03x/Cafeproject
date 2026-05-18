@@ -51,7 +51,7 @@ const ConfirmModal = ({
             className={`flex-1 text-white py-3 rounded-2xl transition ${
               danger
                 ? "bg-red-600 hover:bg-red-700"
-                : "bg-black hover:bg-gray-800"
+                : "theme-primary theme-primary-hover"
             }`}
           >
             {loading

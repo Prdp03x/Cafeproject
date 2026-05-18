@@ -6,26 +6,32 @@ import OrdersSection from "../components/Dashboard/OrdersSection";
 import MenuSection from "../components/Dashboard/MenuSection";
 import SettingsSection from "../components/Dashboard/SettingsSection";
 import socket from "../socket";
-import { useNavigate } from "react-router";
 import { FaBars, FaClipboardList, FaCog, FaEdit } from "react-icons/fa";
-import { FiMapPin, FiRadio, FiVolume2 } from "react-icons/fi";
+import { FiMapPin, FiRadio, FiVolume2, FiPhone } from "react-icons/fi";
 import { toast } from "react-toastify";
+import useAuth from "../hooks/useAuth";
+import useThemeColor from "../hooks/useThemeColor";
+
+const CUSTOMER_CARE_PHONE = "+91 7711021021";
 
 const viewConfig = {
   orders: {
     label: "Orders",
     title: "Orders command center",
-    description: "Monitor live tickets, track service flow, and keep kitchen actions moving.",
+    description:
+      "Monitor live tickets, track service flow, and keep kitchen actions moving.",
   },
   menu: {
     label: "Menu",
     title: "Menu management",
-    description: "Keep your catalog polished, consistent, and easy to maintain.",
+    description:
+      "Keep your catalog polished, consistent, and easy to maintain.",
   },
   settings: {
     label: "Settings",
     title: "Cafe settings",
-    description: "Control your brand details, business information, and account security.",
+    description:
+      "Control your brand details, business information, and account security.",
   },
 };
 
@@ -58,13 +64,15 @@ const DashboardNavButton = ({ active, description, icon, label, onClick }) => {
       onClick={onClick}
       className={`group flex w-full items-center gap-3 rounded-[22px] px-4 py-3 text-left transition ${
         active
-          ? "bg-slate-900 text-white shadow-[0_16px_36px_rgba(15,23,42,0.18)]"
+          ? "theme-primary theme-primary-elevated theme-primary-hover text-white"
           : "text-slate-700 hover:bg-stone-100"
       }`}
     >
       <div
         className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-          active ? "bg-white/12 text-white" : "bg-white text-slate-700 shadow-sm"
+          active
+            ? "bg-white/12 text-white"
+            : "bg-white text-slate-700 shadow-sm"
         }`}
       >
         <NavIcon size={16} />
@@ -74,7 +82,9 @@ const DashboardNavButton = ({ active, description, icon, label, onClick }) => {
         <p className="text-sm font-semibold">{label}</p>
         <p
           className={`text-xs ${
-            active ? "text-white/70" : "text-slate-500 group-hover:text-slate-600"
+            active
+              ? "text-white/70"
+              : "text-slate-500 group-hover:text-slate-600"
           }`}
         >
           {description}
@@ -94,46 +104,15 @@ const Dashboard = () => {
     updateOrder,
     removeOrder,
   } = useOrders();
-  const navigate = useNavigate();
+  const { cafe, updateCafe: updateCafeData } = useAuth();
   const [loadingActions, setLoadingActions] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("orders");
-
-  const [cafe, setCafe] = useState(() =>
-    JSON.parse(localStorage.getItem("cafe") || "null"),
-  );
-
-  const updateCafeData = (updatedCafe) => {
-    setCafe(updatedCafe);
-    localStorage.setItem("cafe", JSON.stringify(updatedCafe));
-  };
+  useThemeColor(cafe?.themeColor);
 
   useEffect(() => {
     document.title = "Dashboard | Kitchen";
-
-    const loadCafe = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      if (cafe) return;
-
-      try {
-        const res = await API.get("/auth/me");
-        localStorage.setItem("cafe", JSON.stringify(res.data));
-        setCafe(res.data);
-      } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("cafe");
-        navigate("/login");
-      }
-    };
-
-    loadCafe();
-  }, [cafe, navigate]);
+  }, []);
 
   useEffect(() => {
     if (!cafe?.id) return;
@@ -212,10 +191,25 @@ const Dashboard = () => {
     }
   };
 
-  const pendingCount = orders.filter((order) => order.status === "pending").length;
-  const liveCount = orders.filter((order) => order.status !== "completed").length;
+  const pendingCount = orders.filter(
+    (order) => order.status === "pending",
+  ).length;
+  const liveCount = orders.filter(
+    (order) => order.status !== "completed",
+  ).length;
   const currentView = viewConfig[activePage];
   const cafeInitial = cafe?.name?.charAt(0)?.toUpperCase() || "C";
+  const businessPhone =
+    typeof cafe?.phone === "string" ? cafe.phone.trim() : "";
+  const cafeLocation = [
+    cafe?.address,
+    cafe?.city,
+    cafe?.state,
+    cafe?.postalCode,
+    cafe?.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div
@@ -252,7 +246,7 @@ const Dashboard = () => {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-slate-900 text-xl font-bold text-white">
+                    <div className="theme-primary flex h-full w-full items-center justify-center text-xl font-bold text-white">
                       {cafeInitial}
                     </div>
                   )}
@@ -265,7 +259,7 @@ const Dashboard = () => {
                   <h2 className="mt-2 truncate text-xl font-semibold text-slate-900">
                     {cafe?.name || "Cafe"}
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-[10px] text-slate-500">
                     {cafe?.category || "Cafe"} operations dashboard
                   </p>
                 </div>
@@ -277,35 +271,52 @@ const Dashboard = () => {
                 </p>
               ) : (
                 <p className="mt-5 text-sm leading-6 text-slate-500">
-                  Manage orders, menu items, and business settings from one place.
+                  Manage orders, menu items, and business settings from one
+                  place.
                 </p>
               )}
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-stone-100 px-3 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                    Live
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-slate-900">
-                    {liveCount}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-amber-50 px-3 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-amber-700">
-                    Pending
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-amber-900">
-                    {pendingCount}
-                  </p>
-                </div>
-              </div>
+              {cafeLocation || businessPhone ? (
+                <div className="mt-5 flex items-start gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3 text-[12px] text-slate-600 flex-col">
+                  {cafeLocation ? (
+                    <div className="flex items-start gap-2">
+                      <FiMapPin className="mt-0.5 shrink-0 text-slate-400" />
+                      <span>{cafeLocation}</span>
+                    </div>
+                  ) : null}
 
-              {cafe?.address ? (
-                <div className="mt-5 flex items-start gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm text-slate-600">
-                  <FiMapPin className="mt-0.5 shrink-0 text-slate-400" />
-                  <span>{cafe.address}</span>
+                  {businessPhone ? (
+                    <div className="flex items-start gap-2">
+                      <FiPhone className="mt-0.5 shrink-0 text-slate-400" />
+                      <a
+                        href={`tel:${businessPhone}`}
+                        className="transition hover:text-slate-900"
+                      >
+                        {businessPhone}
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
+
+              {/* <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-stone-100 px-3 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      Live
+                    </p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900">
+                      {liveCount}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-amber-50 px-3 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-amber-700">
+                      Pending
+                    </p>
+                    <p className="mt-1 text-xl font-semibold text-amber-900">
+                      {pendingCount}
+                    </p>
+                  </div>
+                </div> */}
             </div>
 
             <div className="rounded-[30px] border border-white/70 bg-white/82 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -355,7 +366,28 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <LogoutBtn className="w-full justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800" />
+              <div className="mb-4 flex items-center gap-4 rounded-xl border border-stone-200 px-4 py-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100">
+                  <FiPhone className="text-sm text-slate-600" />
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                    Customer care
+                  </p>
+
+                  <a
+                    href={`tel:${CUSTOMER_CARE_PHONE}`}
+                    className="mt-1 block text-sm font-medium text-slate-700 hover:text-slate-900"
+                  >
+                    {CUSTOMER_CARE_PHONE}
+                  </a>
+                </div>
+
+                
+              </div>
+
+              <LogoutBtn className="theme-primary theme-primary-hover w-full justify-center rounded-2xl px-4 py-3 text-sm font-medium text-white transition" />
             </div>
           </div>
         </aside>
@@ -380,7 +412,7 @@ const Dashboard = () => {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-900 text-lg font-semibold text-white">
+                      <div className="theme-primary flex h-full w-full items-center justify-center text-lg font-semibold text-white">
                         {cafeInitial}
                       </div>
                     )}

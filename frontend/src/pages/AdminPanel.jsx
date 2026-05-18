@@ -4,32 +4,33 @@ import AddItemModal from "../components/Admin/AddItemModal";
 import { useNavigate } from "react-router";
 import { FaArrowLeft, FaRegEdit } from "react-icons/fa";
 import { AiOutlineDelete } from "react-icons/ai";
+import useAuth from "../hooks/useAuth";
 
 const AdminPanel = () => {
   const [menu, setMenu] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const navigate = useNavigate();
+  const { cafe } = useAuth();
+  const cafeId = cafe?.id;
 
   const fetchMenu = useCallback(async () => {
     try {
-      const cafe = JSON.parse(localStorage.getItem("cafe"));
-      if (!cafe?.id) {
-        navigate("/login");
-        return;
-      }
+      if (!cafeId) return;
 
-      const res = await API.get(`/menu?cafeId=${cafe.id}`);
+      const res = await API.get(`/menu?cafeId=${cafeId}`);
       setMenu(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to fetch menu", err);
     }
-  }, [navigate]);
+  }, [cafeId]);
 
   useEffect(() => {
+    if (!cafeId) return;
+
     const timer = setTimeout(fetchMenu, 0);
     return () => clearTimeout(timer);
-  }, [fetchMenu]);
+  }, [cafeId, fetchMenu]);
 
   const deleteItem = async (id) => {
     try {

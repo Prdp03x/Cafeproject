@@ -1,8 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineUser } from "react-icons/hi";
 import { signup } from "../api/api";
+import useAuth from "../hooks/useAuth";
 
 const Signup = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -31,10 +35,8 @@ const Signup = () => {
       const res = await signup(form);
 
       // 🔥 Auto login
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("cafe", JSON.stringify(res.data.cafe));
-
-      window.location.href = "/dashboard";
+      login(res.data.token, res.data.cafe);
+      navigate("/dashboard");
 
     } catch (err) {
       const message = err.response?.data?.error;
@@ -42,7 +44,7 @@ const Signup = () => {
       if (message === "Email already exists") {
         setError("Account already exists. Please login.");
         setTimeout(() => {
-          window.location.href = "/login";
+          navigate("/login");
         }, 1500);
       } else {
         setError(message || "Signup failed");
@@ -117,7 +119,7 @@ const Signup = () => {
         <p className="text-center text-sm text-gray-500">
           Already have an account?{" "}
           <span
-            onClick={() => (window.location.href = "/login")}
+            onClick={() => navigate("/login")}
             className="text-black font-medium cursor-pointer"
           >
             Login

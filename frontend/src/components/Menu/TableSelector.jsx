@@ -9,7 +9,7 @@ const TableSelector = ({ tableNumber, setTableNumber }) => {
   if (tableNumber) {
     return (
       <div className="max-w-7xl mx-auto mt-0">
-        <div className="bg-green-100 p-2 rounded text-sm font-medium">
+        <div className="theme-primary-soft rounded border p-2 text-sm font-medium">
           Table #{tableNumber}
         </div>
       </div>
@@ -31,7 +31,7 @@ const TableSelector = ({ tableNumber, setTableNumber }) => {
                 // 🔥 update URL with table
                 navigate(`/?cafe=${cafeId}&table=${selectedTable}`);
               }}
-              className="px-4 py-2 bg-black text-white rounded"
+              className="theme-primary theme-primary-hover rounded px-4 py-2 text-white"
             >
               {num}
             </button>

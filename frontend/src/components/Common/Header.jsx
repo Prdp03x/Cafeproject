@@ -50,7 +50,7 @@ const Header = ({
             className="h-10 w-10 object-cover rounded-full border"
           />
         ) : (
-          <div className="h-10 w-10 rounded-full bg-green-800 flex items-center justify-center text-white font-semibold">
+          <div className="theme-primary flex h-10 w-10 items-center justify-center rounded-full text-white font-semibold">
             {brand?.name?.charAt(0) || "C"}
           </div>
         )}
@@ -85,7 +85,7 @@ const Header = ({
         </div>
 
         {cartCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-green-800 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+          <span className="theme-primary absolute -top-1 -right-1 rounded-full px-1.5 py-0.5 text-[10px] text-white">
             {cartCount}
           </span>
         )}

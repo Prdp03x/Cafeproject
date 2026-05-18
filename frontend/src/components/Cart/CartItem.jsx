@@ -56,7 +56,7 @@ const CartItem = ({ item, removeFromCart, addToCart }) => {
 
             <button
               onClick={() => addToCart(item, 1)}
-              className="w-7 h-7 flex items-center justify-center bg-green-800 rounded-full text-white"
+              className="theme-primary theme-primary-hover flex h-7 w-7 items-center justify-center rounded-full text-white"
             >
               <FiPlus size={14} />
             </button>

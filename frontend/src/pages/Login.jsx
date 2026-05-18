@@ -3,9 +3,11 @@ import API from "../api/api";
 import { useNavigate } from "react-router";
 import GoogleLoginButton from "../components/Common/GoogleLoginButton";
 import { HiOutlineMail, HiOutlineLockClosed } from "react-icons/hi";
+import useAuth from "../hooks/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,8 +31,7 @@ const Login = () => {
       });
 
       // 🔥 Store token
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("cafe", JSON.stringify(res.data.cafe));
+      login(res.data.token, res.data.cafe);
 
       navigate("/dashboard");
 

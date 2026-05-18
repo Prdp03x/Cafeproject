@@ -10,7 +10,7 @@ import SearchBar from "../components/Menu/SearchBar";
 import MenuContent from "../components/Menu/MenuContent";
 import TableSelector from "../components/Menu/TableSelector";
 import TopActions from "../components/Menu/TopActions";
-import ItemModel from "../components/Menu/ItemModel";
+import ItemModal from "../components/Menu/ItemModal";
 // HOOKS
 import useMenu from "../hooks/useMenu";
 import useCart from "../hooks/useCart";
@@ -19,6 +19,7 @@ import useSocket from "../hooks/useSocket";
 import useOrderCount from "../hooks/useOrderCount";
 import useStickyScroll from "../hooks/useStickyScroll";
 import useCafe from "../hooks/useCafe";
+import useThemeColor from "../hooks/useThemeColor";
 // API
 import API from "../api/api";
 
@@ -45,6 +46,7 @@ const Menu = () => {
  // CUSTOM HOOKS
   const { showSticky, stickyRef } = useStickyScroll();
   const { cafe } = useCafe(cafeId);
+  useThemeColor(cafe?.themeColor);
   const { menu, categories, selectedCategory, loadMenu, loading } =
     useMenu(cafeId);
 
@@ -74,6 +76,16 @@ const Menu = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const shouldLockScroll = showCart || Boolean(selectedItem);
+
+    document.body.style.overflow = shouldLockScroll ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedItem, showCart]);
 
   // 🔹 Derived State
   const filteredMenu = menu.filter((item) =>
@@ -154,7 +166,7 @@ const Menu = () => {
           </p>
 
           <div className="flex justify-between items-center my-4">
-            <h1 className="text-3xl font-semibold text-green-700">
+            <h1 className="theme-text text-3xl font-semibold">
               Special For You
             </h1>
             <span className="text-sm text-gray-500">
@@ -208,7 +220,7 @@ const Menu = () => {
         />
 
         {selectedItem && (
-          <ItemModel
+          <ItemModal
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
             addToCart={addToCart}

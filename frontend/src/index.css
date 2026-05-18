@@ -12,6 +12,16 @@
   --font-inter: "Inter", sans-Serif;
 }
 
+:root {
+  --brand-color: #14532d;
+  --brand-color-strong: #0f4224;
+  --brand-color-contrast: #ffffff;
+  --brand-color-soft: rgba(20, 83, 45, 0.12);
+  --brand-color-softer: rgba(20, 83, 45, 0.18);
+  --brand-color-border: rgba(20, 83, 45, 0.26);
+  --brand-color-shadow: rgba(20, 83, 45, 0.3);
+}
+
 body {
   font-family: "Poppins", sans-serif;
   background: #f4efe6;
@@ -19,8 +29,52 @@ body {
 }
 
 ::selection {
-  background: rgba(15, 23, 42, 0.12);
+  background: var(--brand-color-soft);
   color: #0f172a;
+}
+
+.theme-primary {
+  background-color: var(--brand-color);
+  border-color: var(--brand-color);
+  color: var(--brand-color-contrast);
+}
+
+.theme-primary-elevated {
+  box-shadow: 0 16px 36px var(--brand-color-shadow);
+}
+
+.theme-primary-hover {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+.theme-primary-hover:hover {
+  background-color: var(--brand-color-strong);
+  border-color: var(--brand-color-strong);
+}
+
+.theme-primary-soft {
+  background-color: var(--brand-color-soft);
+  border-color: var(--brand-color-border);
+  color: var(--brand-color);
+}
+
+.theme-primary-soft-hover {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.theme-primary-soft-hover:hover {
+  background-color: var(--brand-color-softer);
+}
+
+.theme-text {
+  color: var(--brand-color);
 }
 
 /* 🔥 Hide scrollbar completely */
@@ -58,4 +112,34 @@ body {
 
 .animate-slideDown {
   animation: slideDown 0.3s ease-in-out forwards;
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dialogIn {
+  animation: dialogIn 0.25s ease-out;
+}
+
+@keyframes dialogOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+}
+
+.animate-dialogOut {
+  animation: dialogOut 0.25s ease-in forwards;
 }

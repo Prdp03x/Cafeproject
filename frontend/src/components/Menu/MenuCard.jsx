@@ -14,7 +14,7 @@ const MenuCard = ({ item, onClick }) => {
 
         {/* Floating Add Button */}
         <button
-          className="absolute bottom-3 right-3 bg-green-800 text-white text-sm px-4 py-1.5 rounded-full shadow"
+          className="theme-primary theme-primary-hover absolute bottom-3 right-3 rounded-full px-4 py-1.5 text-sm text-white shadow"
           onClick={(e) => {
             e.stopPropagation(); // prevent modal open
             onClick(); // open modal instead
@@ -26,7 +26,7 @@ const MenuCard = ({ item, onClick }) => {
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-green-800 line-clamp-1">
+        <h3 className="theme-text line-clamp-1 text-lg font-semibold">
           {item.name}
         </h3>
 

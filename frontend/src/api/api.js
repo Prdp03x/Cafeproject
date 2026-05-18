@@ -32,7 +32,13 @@ API.interceptors.request.use((config) => {
 
   if (token) {
     config.headers ||= {};
-    config.headers.Authorization = `Bearer ${token}`;
+    const hasAuthorizationHeader =
+      typeof config.headers.Authorization !== "undefined" ||
+      typeof config.headers.authorization !== "undefined";
+
+    if (!hasAuthorizationHeader) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   return config;

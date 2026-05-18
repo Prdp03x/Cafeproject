@@ -16,7 +16,7 @@ const TopActions = ({
 
             navigate(`/status?cafe=${cafeId}&table=${tableNumber}`);
           }}
-          className="bg-white border px-6 py-3 rounded-full shadow-lg whitespace-nowrap hover:bg-gray-100 transition active:scale-95"
+          className="theme-primary-soft theme-primary-soft-hover whitespace-nowrap rounded-full border px-6 py-3 shadow-lg transition active:scale-95"
         >
           📦 Orders ({orderCount})
         </button>

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import API from "../api/api";
+import useAuth from "../hooks/useAuth";
 
 export default function GoogleSuccess() {
   const navigate = useNavigate();
+  const { authenticateWithToken, logout } = useAuth();
 
   useEffect(() => {
     const completeLogin = async () => {
@@ -15,20 +16,17 @@ export default function GoogleSuccess() {
         return;
       }
 
-      localStorage.setItem("token", token);
-
       try {
-        const res = await API.get("/auth/me");
-        localStorage.setItem("cafe", JSON.stringify(res.data));
+        await authenticateWithToken(token);
         navigate("/dashboard");
       } catch {
-        localStorage.removeItem("token");
+        logout();
         navigate("/login");
       }
     };
 
     completeLogin();
-  }, [navigate]);
+  }, [authenticateWithToken, logout, navigate]);
 
   return <div>Logging you in...</div>;
 }

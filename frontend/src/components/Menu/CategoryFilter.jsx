@@ -5,7 +5,7 @@ const CategoryFilter = ({ categories, selectedCategory, onSelect }) => {
         onClick={() => onSelect("")}
         className={`px-4 py-2 rounded-full border border-gray-300 shadow-md ${
           selectedCategory === ""
-            ? "bg-black text-white"
+            ? "theme-primary theme-primary-hover text-white"
             : "bg-white hover:bg-gray-100"
         }`}
       >
@@ -18,7 +18,7 @@ const CategoryFilter = ({ categories, selectedCategory, onSelect }) => {
           onClick={() => onSelect(cat)}
           className={`px-4 py-2 rounded-full border border-gray-300 shadow-md ${
             selectedCategory === cat
-              ? "bg-black text-white"
+              ? "theme-primary theme-primary-hover text-white"
               : "bg-white hover:bg-gray-100"
           }`}
         >

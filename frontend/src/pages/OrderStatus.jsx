@@ -8,6 +8,8 @@ import {
 } from "react-icons/fi";
 import API from "../api/api";
 import socket from "../socket";
+import useCafe from "../hooks/useCafe";
+import useThemeColor from "../hooks/useThemeColor";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -90,6 +92,8 @@ const OrderStatus = () => {
 
   const cafeId = params.get("cafe");
   const tableNumber = params.get("table");
+  const { cafe } = useCafe(cafeId);
+  useThemeColor(cafe?.themeColor);
 
   useEffect(() => {
     document.title = "Your Orders | My Cafe";
@@ -279,7 +283,7 @@ const OrderStatus = () => {
               onClick={() =>
                 navigate(`/?cafe=${cafeId || ""}&table=${tableNumber || ""}`)
               }
-              className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="theme-primary theme-primary-hover mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white"
             >
               <FiArrowLeft />
               Go to menu

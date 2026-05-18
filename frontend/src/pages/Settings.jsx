@@ -3,19 +3,19 @@ import API from "../api/api";
 import { toast } from "react-toastify";
 import { FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router";
-import { HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
+import useAuth from "../hooks/useAuth";
+import useThemeColor from "../hooks/useThemeColor";
+import {
+  brandingFieldNames,
+  businessFieldNames,
+  defaultSettingsForm,
+  mapSettingsToForm,
+  normalizeSettingsPayload,
+  validateBusinessSettings,
+} from "../utils/settingsForm";
 
 const Settings = () => {
-  const [form, setForm] = useState({
-    name: "",
-    ownerName: "",
-    phone: "",
-    description: "",
-    category: "",
-    logo: "",
-    themeColor: "#14532d",
-    totalTables: 10,
-  });
+  const [form, setForm] = useState(defaultSettingsForm);
 
   const [activeTab, setActiveTab] = useState("branding");
   const [loading, setLoading] = useState(false);
@@ -25,6 +25,8 @@ const Settings = () => {
   const [showPasswords, setShowPasswords] = useState(false);
 
   const navigate = useNavigate();
+  const { cafe, updateCafe } = useAuth();
+  useThemeColor(cafe?.themeColor);
 
   useEffect(() => {
     fetchSettings();
@@ -33,17 +35,7 @@ const Settings = () => {
   const fetchSettings = async () => {
     try {
       const res = await API.get("/auth/settings");
-
-      setForm({
-        name: res.data.name || "",
-        ownerName: res.data.ownerName || "",
-        phone: res.data.phone || "",
-        description: res.data.description || "",
-        category: res.data.category || "",
-        logo: res.data.logo || "",
-        themeColor: res.data.themeColor || "#14532d",
-        totalTables: res.data.totalTables || 10,
-      });
+      setForm(mapSettingsToForm(res.data));
     } catch (error) {
       toast.error("Failed to load settings", error);
     }
@@ -74,15 +66,28 @@ const Settings = () => {
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (section) => {
     try {
+      if (section === "business") {
+        const validationError = validateBusinessSettings(form);
+
+        if (validationError) {
+          toast.error(validationError);
+          return;
+        }
+      }
+
       setLoading(true);
 
-      const res = await API.put("/auth/settings", form);
+      const fieldNames = section === "branding" ? brandingFieldNames : businessFieldNames;
+      const res = await API.put(
+        "/auth/settings",
+        normalizeSettingsPayload(form, fieldNames)
+      );
 
       toast.success(res.data.message);
 
-      localStorage.setItem("cafe", JSON.stringify(res.data.cafe));
+      updateCafe(res.data.cafe);
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to save settings");
     } finally {
@@ -149,7 +154,7 @@ const Settings = () => {
                 onClick={() => setActiveTab("branding")}
                 className={`w-full text-left px-4 py-3 rounded-xl transition font-medium ${
                   activeTab === "branding"
-                    ? "bg-black text-white shadow-lg"
+                    ? "theme-primary theme-primary-elevated theme-primary-hover text-white"
                     : "hover:bg-gray-200"
                 }`}
               >
@@ -160,7 +165,7 @@ const Settings = () => {
                 onClick={() => setActiveTab("business")}
                 className={`w-full text-left px-4 py-3 rounded-xl transition font-medium ${
                   activeTab === "business"
-                    ? "bg-black text-white shadow-lg"
+                    ? "theme-primary theme-primary-elevated theme-primary-hover text-white"
                     : "hover:bg-gray-200"
                 }`}
               >
@@ -171,7 +176,7 @@ const Settings = () => {
                 onClick={() => setActiveTab("security")}
                 className={`w-full text-left px-4 py-3 rounded-xl transition font-medium ${
                   activeTab === "security"
-                    ? "bg-black text-white shadow-lg"
+                    ? "theme-primary theme-primary-elevated theme-primary-hover text-white"
                     : "hover:bg-gray-200"
                 }`}
               >
@@ -238,10 +243,36 @@ const Settings = () => {
                   className="w-full border rounded-xl p-3 min-h-[120px]"
                 />
 
+                <div className="rounded-2xl border bg-gray-50 p-4">
+                  <div
+                    className="h-20 rounded-xl border"
+                    style={{ backgroundColor: form.themeColor || "#14532d" }}
+                  />
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <input
+                      type="color"
+                      name="themeColor"
+                      value={form.themeColor}
+                      onChange={handleChange}
+                      className="h-11 w-14 cursor-pointer rounded-xl border bg-white p-1"
+                    />
+
+                    <input
+                      type="text"
+                      name="themeColor"
+                      placeholder="#14532d"
+                      value={form.themeColor}
+                      onChange={handleChange}
+                      className="w-full border rounded-xl p-3"
+                    />
+                  </div>
+                </div>
+
                 <button
-                  onClick={handleSave}
+                  onClick={() => handleSave("branding")}
                   disabled={loading}
-                  className="bg-black text-white px-6 py-3 rounded-xl"
+                  className="theme-primary theme-primary-hover rounded-xl px-6 py-3 text-white"
                 >
                   {loading ? "Saving..." : "Save Branding"}
                 </button>
@@ -274,6 +305,7 @@ const Settings = () => {
                   placeholder="Phone Number"
                   value={form.phone}
                   onChange={handleChange}
+                  required
                   className="w-full border rounded-xl p-3"
                 />
 
@@ -295,10 +327,89 @@ const Settings = () => {
                   className="w-full border rounded-xl p-3"
                 />
 
+                <input
+                  type="text"
+                  name="legalBusinessName"
+                  placeholder="Legal Business Name"
+                  value={form.legalBusinessName}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
+                <input
+                  type="email"
+                  name="billingEmail"
+                  placeholder="Billing Email"
+                  value={form.billingEmail}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
+                <input
+                  type="text"
+                  name="gstNumber"
+                  placeholder="GST Number"
+                  value={form.gstNumber}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
+                <textarea
+                  name="address"
+                  placeholder="Billing Address"
+                  value={form.address}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3 min-h-[120px]"
+                />
+
+                <input
+                  type="text"
+                  name="city"
+                  placeholder="City"
+                  value={form.city}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
+                <input
+                  type="text"
+                  name="state"
+                  placeholder="State"
+                  value={form.state}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
+                <input
+                  type="text"
+                  name="postalCode"
+                  placeholder="Postal Code"
+                  value={form.postalCode}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
+                <input
+                  type="text"
+                  name="country"
+                  placeholder="Country"
+                  value={form.country}
+                  onChange={handleChange}
+                  required
+                  className="w-full border rounded-xl p-3"
+                />
+
                 <button
-                  onClick={handleSave}
+                  onClick={() => handleSave("business")}
                   disabled={loading}
-                  className="bg-black text-white px-6 py-3 rounded-xl"
+                  className="theme-primary theme-primary-hover rounded-xl px-6 py-3 text-white"
                 >
                   {loading ? "Saving..." : "Save Details"}
                 </button>
@@ -356,7 +467,7 @@ const Settings = () => {
                 <div className="flex gap-6">
                   <button
                     onClick={handleChangePassword}
-                    className="bg-black text-white px-6 py-3 rounded-xl"
+                    className="theme-primary theme-primary-hover rounded-xl px-6 py-3 text-white"
                   >
                     Update Password
                   </button>

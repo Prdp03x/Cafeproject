@@ -20,8 +20,8 @@ const AddToCartButton = ({ item, selectedOptions, quantity, addToCart }) => {
       className={`w-full mt-3 py-2 rounded-xl text-white transition-all ease-out duration-100
         ${
           added
-            ? "bg-green-500 scale-100"
-            : "bg-black hover:bg-gray-800"
+            ? "theme-primary scale-100"
+            : "theme-primary theme-primary-hover"
         }`}
     >
       {added ? "Added ✓" : "Add to Cart"}
