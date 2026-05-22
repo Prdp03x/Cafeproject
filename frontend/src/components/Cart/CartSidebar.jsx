@@ -37,7 +37,9 @@ const CartSidebar = ({
   return (
     <div
       className={`fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-[2px] transition-opacity duration-300 ${
-        showCart ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        showCart
+          ? "pointer-events-auto opacity-100"
+          : "pointer-events-none opacity-0"
       }`}
       onClick={() => setShowCart(false)}
     >
@@ -72,7 +74,9 @@ const CartSidebar = ({
         </div>
 
         <div className="mb-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          {tableNumber ? `Serving table #${tableNumber}` : "Choose a table before placing the order."}
+          {tableNumber
+            ? `Serving table #${tableNumber}`
+            : "Choose a table before placing the order."}
         </div>
 
         <div className="scrollbar-hide flex-1 overflow-y-auto">
@@ -112,10 +116,15 @@ const CartSidebar = ({
         {cart.length > 0 && (
           <div className="mt-5 border-t border-slate-100 pt-4">
             <div className="flex items-center justify-between text-lg font-bold text-slate-900">
-              <span>Total</span>
+              <div>
+                <span className="text-lg font-bold text-slate-900">Total</span>
+                <p className="text-xs font-normal text-slate-400">
+                  incl. SGST 2.5% + CGST 2.5%
+                </p>
+              </div>
               <span>
                 {CURRENCY_SYMBOL}
-                {total}
+                {Math.round(total)}
               </span>
             </div>
 

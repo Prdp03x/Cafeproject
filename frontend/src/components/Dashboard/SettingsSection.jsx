@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import API from "../../api/api";
 import { toast } from "react-toastify";
-import FormField from "../Common/FormField";
+import FormField from "../common/FormField";
 import { FaPalette } from "react-icons/fa";
-import {
-  FiBriefcase,
-  FiLock,
-  FiShield,
-  FiTable,
-} from "react-icons/fi";
+import { FiBriefcase, FiLock, FiShield, FiTable } from "react-icons/fi";
 import {
   brandingFieldNames,
   businessFieldNames,
@@ -94,7 +89,7 @@ const SettingsSection = ({ updateCafeData }) => {
         activeTab === "branding" ? brandingFieldNames : businessFieldNames;
       const res = await API.put(
         "/auth/settings",
-        normalizeSettingsPayload(form, fieldNames)
+        normalizeSettingsPayload(form, fieldNames),
       );
 
       toast.success(res.data.message);
@@ -140,8 +135,8 @@ const SettingsSection = ({ updateCafeData }) => {
               Configure the operational identity of your cafe.
             </h3>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Use one place to manage your visual branding, business details, and account
-              security without leaving the dashboard flow.
+              Use one place to manage your visual branding, business details,
+              and account security without leaving the dashboard flow.
             </p>
           </div>
 
@@ -169,7 +164,8 @@ const SettingsSection = ({ updateCafeData }) => {
                   {form.name || "Cafe Name"}
                 </h4>
                 <p className="mt-1 text-sm text-slate-500">
-                  {form.category || "Cafe"} . {form.ownerName || "Owner not added"}
+                  {form.category || "Cafe"} .{" "}
+                  {form.ownerName || "Owner not added"}
                 </p>
               </div>
             </div>
@@ -253,10 +249,12 @@ const SettingsSection = ({ updateCafeData }) => {
           </div>
 
           <div className="rounded-[32px] border border-white/70 bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.07)]">
-            <h3 className="text-sm font-semibold text-slate-950">Admin notes</h3>
+            <h3 className="text-sm font-semibold text-slate-950">
+              Admin notes
+            </h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Keep names concise, make descriptions useful, and avoid storing temporary
-              operational details in branding fields.
+              Keep names concise, make descriptions useful, and avoid storing
+              temporary operational details in branding fields.
             </p>
           </div>
         </aside>
@@ -272,7 +270,8 @@ const SettingsSection = ({ updateCafeData }) => {
                   Manage your public-facing brand
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Update the identity customers and staff recognize across the dashboard.
+                  Update the identity customers and staff recognize across the
+                  dashboard.
                 </p>
               </div>
 
@@ -308,9 +307,12 @@ const SettingsSection = ({ updateCafeData }) => {
                 </div>
 
                 <div className="rounded-[28px] border border-stone-200 bg-stone-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Theme accent</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Theme accent
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Store a primary color for future branding and dashboard extensions.
+                    Store a primary color for future branding and dashboard
+                    extensions.
                   </p>
 
                   <div className="mt-4 overflow-hidden rounded-[24px] border border-stone-200 bg-white p-4">
@@ -358,8 +360,8 @@ const SettingsSection = ({ updateCafeData }) => {
                   Maintain business details
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Keep operational information complete so the dashboard always reflects the
-                  right business profile.
+                  Keep operational information complete so the dashboard always
+                  reflects the right business profile.
                 </p>
               </div>
 
@@ -406,9 +408,12 @@ const SettingsSection = ({ updateCafeData }) => {
 
               <div className="rounded-[28px] border border-stone-200 bg-stone-50 p-5">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-950">Billing profile</h3>
+                  <h3 className="text-lg font-semibold text-slate-950">
+                    Billing profile
+                  </h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Keep invoice-ready information complete for tax and payment records.
+                    Keep invoice-ready information complete for tax and payment
+                    records.
                   </p>
                 </div>
 
@@ -442,6 +447,15 @@ const SettingsSection = ({ updateCafeData }) => {
                     onChange={handleChange}
                     required
                     hint="Use the registered 15-character GSTIN."
+                  />
+
+                  <FormField
+                    label="FSSAI License Number"
+                    type="text"
+                    name="fssaiNumber"
+                    placeholder="e.g. 10012345678901"
+                    value={form.fssaiNumber || ""}
+                    onChange={handleChange}
                   />
 
                   <FormField
@@ -510,7 +524,8 @@ const SettingsSection = ({ updateCafeData }) => {
                   Protect admin access
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Update your password regularly and avoid sharing access across staff.
+                  Update your password regularly and avoid sharing access across
+                  staff.
                 </p>
               </div>
 
@@ -523,7 +538,9 @@ const SettingsSection = ({ updateCafeData }) => {
                 </div>
 
                 <div className="rounded-[24px] border border-stone-200 bg-stone-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">Uniqueness</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Uniqueness
+                  </p>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
                     Avoid obvious or reused passwords.
                   </p>

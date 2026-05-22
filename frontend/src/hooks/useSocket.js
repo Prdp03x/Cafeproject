@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import socket from "../socket";
+import socket from "../lib/socket";
 
 const useSocket = (cafeId) => {
   useEffect(() => {

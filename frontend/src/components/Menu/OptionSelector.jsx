@@ -1,3 +1,5 @@
+import { withGST } from "../../utils/gst";
+
 const OptionSelector = ({
   itemId,
   opt,
@@ -25,7 +27,7 @@ const OptionSelector = ({
               handleOptionChange(itemId, opt.title, choice, opt.type)
             }
           />
-          {choice.name} (+₹{choice.price})
+          {choice.name} (+₹{withGST(choice.price)})
         </label>
       ))}
     </div>

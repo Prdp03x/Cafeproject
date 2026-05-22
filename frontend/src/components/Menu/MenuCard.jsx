@@ -1,3 +1,5 @@
+import { withGST } from "../../utils/gst";
+
 const MenuCard = ({ item, onClick }) => {
   return (
     <div
@@ -36,13 +38,14 @@ const MenuCard = ({ item, onClick }) => {
 
         <div className="mt-3 flex justify-between items-center">
           <span className="font-bold text-gray-800">
-            ₹ {item.price}
+            ₹ {Math.round(withGST(item.price))}
+          </span>
+          <span className="block text-[10px] text-gray-400">
+            {item.options?.length > 0 ? "onwards · incl. GST" : "incl. GST"}
           </span>
 
           {item.options?.length > 0 && (
-            <span className="text-xs text-gray-400">
-              Customizable
-            </span>
+            <span className="text-xs text-gray-400">Customizable</span>
           )}
         </div>
       </div>

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import API from "../api/api";
-import AddItemModal from "../components/Admin/AddItemModal";
+import AddItemModal from "../components/menu/AddItemModal";
 import { useNavigate } from "react-router";
 import { FaArrowLeft, FaRegEdit } from "react-icons/fa";
 import { AiOutlineDelete } from "react-icons/ai";
 import useAuth from "../hooks/useAuth";
 
-const AdminPanel = () => {
+const MenuManagement = () => {
   const [menu, setMenu] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -132,4 +132,4 @@ const AdminPanel = () => {
   );
 };
 
-export default AdminPanel;
+export default MenuManagement;

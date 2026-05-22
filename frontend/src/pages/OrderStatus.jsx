@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { withGST } from "../utils/gst";
 import {
   FiArrowLeft,
   FiClock,
@@ -7,7 +8,7 @@ import {
   FiShoppingBag,
 } from "react-icons/fi";
 import API from "../api/api";
-import socket from "../socket";
+import socket from "../lib/socket";
 import useCafe from "../hooks/useCafe";
 import useThemeColor from "../hooks/useThemeColor";
 
@@ -183,10 +184,10 @@ const OrderStatus = () => {
       sum + order.items.reduce((itemSum, item) => itemSum + (item.qty || 0), 0),
     0,
   );
-  const totalPayable = orders.reduce(
-    (sum, order) => sum + (order.total || 0),
-    0,
-  );
+  const totalPayable = withGST(
+  orders.reduce((sum, order) => sum + (order.total || 0), 0)
+);
+
 
   return (
     <div className="min-h-screen bg-[#f6f1e8] px-4 py-5 text-slate-900 sm:px-5">
@@ -337,7 +338,8 @@ const OrderStatus = () => {
                             (sum, option) => sum + (option.price || 0),
                             0,
                           ) || 0;
-                        const lineTotal = (item.price + extras) * item.qty;
+                        // const lineTotal = (item.price + extras) * item.qty;
+                        const lineTotal = withGST((item.price + extras) * item.qty);
 
                         const extraOpt =
                           item.selectedOptions?.map((opt) => opt.name) || [];
@@ -383,7 +385,7 @@ const OrderStatus = () => {
                           Total
                         </p>
                         <p className="mt-1 text-lg font-semibold text-slate-950">
-                          {formatCurrency(order.total)}
+                          {formatCurrency(withGST(order.total))}
                         </p>
                       </div>
 

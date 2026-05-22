@@ -2,15 +2,15 @@ import { useSearchParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 // COMPONENTS
-import Header from "../components/Common/Header";
-import CategoryFilter from "../components/Menu/CategoryFilter";
-import CartSidebar from "../components/Cart/CartSidebar";
-import FloatingCart from "../components/Menu/FloatingCart";
-import SearchBar from "../components/Menu/SearchBar";
-import MenuContent from "../components/Menu/MenuContent";
-import TableSelector from "../components/Menu/TableSelector";
-import TopActions from "../components/Menu/TopActions";
-import ItemModal from "../components/Menu/ItemModal";
+import Header from "../components/common/Header";
+import CategoryFilter from "../components/menu/CategoryFilter";
+import CartSidebar from "../components/cart/CartSidebar";
+import FloatingCart from "../components/menu/FloatingCart";
+import SearchBar from "../components/menu/SearchBar";
+import MenuContent from "../components/menu/MenuContent";
+import TableSelector from "../components/menu/TableSelector";
+import TopActions from "../components/menu/TopActions";
+import ItemModal from "../components/menu/ItemModal";
 // HOOKS
 import useMenu from "../hooks/useMenu";
 import useCart from "../hooks/useCart";

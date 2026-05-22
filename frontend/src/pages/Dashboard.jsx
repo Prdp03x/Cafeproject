@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import useOrders from "../hooks/useOrders";
 import API from "../api/api";
-import LogoutBtn from "../components/Common/LogoutBtn";
-import OrdersSection from "../components/Dashboard/OrdersSection";
-import MenuSection from "../components/Dashboard/MenuSection";
-import SettingsSection from "../components/Dashboard/SettingsSection";
-import socket from "../socket";
+import LogoutBtn from "../components/common/LogoutBtn";
+import OrdersSection from "../components/dashboard/OrdersSection";
+import MenuSection from "../components/dashboard/MenuSection";
+import SettingsSection from "../components/dashboard/SettingsSection";
+import BillingSection from "../components/dashboard/BillingSection";
+import socket from "../lib/socket";
 import { FaBars, FaClipboardList, FaCog, FaEdit } from "react-icons/fa";
-import { FiMapPin, FiRadio, FiVolume2, FiPhone } from "react-icons/fi";
+import { FiMapPin, FiRadio, FiVolume2, FiPhone, FiDollarSign } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useAuth from "../hooks/useAuth";
 import useThemeColor from "../hooks/useThemeColor";
@@ -18,47 +19,34 @@ const viewConfig = {
   orders: {
     label: "Orders",
     title: "Orders command center",
-    description:
-      "Monitor live tickets, track service flow, and keep kitchen actions moving.",
+    description: "Monitor live tickets, track service flow, and keep kitchen actions moving.",
   },
   menu: {
     label: "Menu",
     title: "Menu management",
-    description:
-      "Keep your catalog polished, consistent, and easy to maintain.",
+    description: "Keep your catalog polished, consistent, and easy to maintain.",
+  },
+  billing: {
+    label: "Billing",
+    title: "Billing & analytics",
+    description: "View daily revenue, track bills, and manage cancellations.",
   },
   settings: {
     label: "Settings",
     title: "Cafe settings",
-    description:
-      "Control your brand details, business information, and account security.",
+    description: "Control your brand details, business information, and account security.",
   },
 };
 
 const navItems = [
-  {
-    key: "orders",
-    label: "Orders",
-    description: "Realtime service",
-    icon: FaClipboardList,
-  },
-  {
-    key: "menu",
-    label: "Menu",
-    description: "Items and pricing",
-    icon: FaEdit,
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    description: "Brand and account",
-    icon: FaCog,
-  },
+  { key: "orders",  label: "Orders",  description: "Realtime service",   icon: FaClipboardList },
+  { key: "menu",    label: "Menu",    description: "Items and pricing",   icon: FaEdit },
+  { key: "billing", label: "Billing", description: "Revenue & bills",     icon: FiDollarSign },
+  { key: "settings",label: "Settings",description: "Brand and account",   icon: FaCog },
 ];
 
 const DashboardNavButton = ({ active, description, icon, label, onClick }) => {
   const NavIcon = icon;
-
   return (
     <button
       onClick={onClick}
@@ -68,25 +56,14 @@ const DashboardNavButton = ({ active, description, icon, label, onClick }) => {
           : "text-slate-700 hover:bg-stone-100"
       }`}
     >
-      <div
-        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-          active
-            ? "bg-white/12 text-white"
-            : "bg-white text-slate-700 shadow-sm"
-        }`}
-      >
+      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+        active ? "bg-white/12 text-white" : "bg-white text-slate-700 shadow-sm"
+      }`}>
         <NavIcon size={16} />
       </div>
-
       <div className="min-w-0">
         <p className="text-sm font-semibold">{label}</p>
-        <p
-          className={`text-xs ${
-            active
-              ? "text-white/70"
-              : "text-slate-500 group-hover:text-slate-600"
-          }`}
-        >
+        <p className={`text-xs ${active ? "text-white/70" : "text-slate-500 group-hover:text-slate-600"}`}>
           {description}
         </p>
       </div>
@@ -96,13 +73,8 @@ const DashboardNavButton = ({ active, description, icon, label, onClick }) => {
 
 const Dashboard = () => {
   const {
-    orders,
-    newOrderIds,
-    fetchOrders,
-    enableAudio,
-    addIncomingOrder,
-    updateOrder,
-    removeOrder,
+    orders, newOrderIds, fetchOrders, enableAudio,
+    addIncomingOrder, updateOrder, removeOrder,
   } = useOrders();
   const { cafe, updateCafe: updateCafeData } = useAuth();
   const [loadingActions, setLoadingActions] = useState({});
@@ -110,26 +82,15 @@ const Dashboard = () => {
   const [activePage, setActivePage] = useState("orders");
   useThemeColor(cafe?.themeColor);
 
-  useEffect(() => {
-    document.title = "Dashboard | Kitchen";
-  }, []);
+  useEffect(() => { document.title = "Dashboard | Kitchen"; }, []);
 
   useEffect(() => {
     if (!cafe?.id) return;
-
     socket.emit("joinCafe", cafe.id);
 
-    const handleNewOrder = (order) => {
-      addIncomingOrder(order);
-    };
-
-    const handleOrderUpdated = (updatedOrder) => {
-      updateOrder(updatedOrder);
-    };
-
-    const handleOrderDeleted = (id) => {
-      removeOrder(id);
-    };
+    const handleNewOrder = (order) => addIncomingOrder(order);
+    const handleOrderUpdated = (updatedOrder) => updateOrder(updatedOrder);
+    const handleOrderDeleted = (id) => removeOrder(id);
 
     socket.on("newOrder", handleNewOrder);
     socket.on("orderUpdated", handleOrderUpdated);
@@ -144,10 +105,8 @@ const Dashboard = () => {
 
   const setActionLoading = (id, action, isLoading) => {
     const key = `${id}:${action}`;
-
     setLoadingActions((prev) => {
       if (isLoading) return { ...prev, [key]: true };
-
       const next = { ...prev };
       delete next[key];
       return next;
@@ -159,13 +118,12 @@ const Dashboard = () => {
 
   const updateStatus = async (id, status) => {
     if (isOrderBusy(id)) return;
-
     setActionLoading(id, status, true);
-
     try {
-      await API.put(`/orders/${id}`, { status });
+      const res = await API.put(`/orders/${id}`, { status });
+      // Optimistically update local state; socket will also fire
+      updateOrder(res.data.order);
       toast.success(`Order marked as ${status}`);
-      fetchOrders();
     } catch (err) {
       console.error(err);
       toast.error("Failed to update order status");
@@ -176,13 +134,12 @@ const Dashboard = () => {
 
   const deleteOrder = async (id) => {
     if (isOrderBusy(id)) return;
-
     setActionLoading(id, "delete", true);
-
     try {
       await API.delete(`/orders/${id}`);
-      toast.success("Order deleted");
-      fetchOrders();
+      // Remove from local state immediately (socket also fires orderDeleted)
+      removeOrder(id);
+      toast.success("Order removed");
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete order");
@@ -191,31 +148,16 @@ const Dashboard = () => {
     }
   };
 
-  const pendingCount = orders.filter(
-    (order) => order.status === "pending",
-  ).length;
-  const liveCount = orders.filter(
-    (order) => order.status !== "completed",
-  ).length;
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
+  const liveCount = orders.filter((o) => o.status !== "completed" && o.status !== "cancelled").length;
   const currentView = viewConfig[activePage];
   const cafeInitial = cafe?.name?.charAt(0)?.toUpperCase() || "C";
-  const businessPhone =
-    typeof cafe?.phone === "string" ? cafe.phone.trim() : "";
-  const cafeLocation = [
-    cafe?.address,
-    cafe?.city,
-    cafe?.state,
-    cafe?.postalCode,
-    cafe?.country,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const businessPhone = typeof cafe?.phone === "string" ? cafe.phone.trim() : "";
+  const cafeLocation = [cafe?.address, cafe?.city, cafe?.state, cafe?.postalCode, cafe?.country]
+    .filter(Boolean).join(", ");
 
   return (
-    <div
-      onClick={enableAudio}
-      className="min-h-screen bg-[#f4efe6] text-slate-900"
-    >
+    <div onClick={enableAudio} className="min-h-screen bg-[#f4efe6] text-slate-900">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute left-[-12%] top-[-10%] h-64 w-64 rounded-full bg-amber-200/30 blur-3xl" />
         <div className="absolute right-[-8%] top-[12%] h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl" />
@@ -223,109 +165,66 @@ const Dashboard = () => {
       </div>
 
       {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-sm md:hidden"
-        />
+        <div onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-sm md:hidden" />
       )}
 
       <div className="flex min-h-screen">
-        <aside
-          className={`fixed left-0 top-0 z-50 h-screen w-[88vw] max-w-[340px] transform transition-transform duration-300 md:w-[320px] md:max-w-none md:translate-x-0 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
+        {/* Sidebar */}
+        <aside className={`fixed left-0 top-0 z-50 h-screen w-[88vw] max-w-[340px] transform transition-transform duration-300 md:w-[320px] md:max-w-none md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}>
           <div className="flex h-full flex-col gap-4 overflow-y-auto p-4 scrollbar-hide md:p-5">
+            {/* Cafe card */}
             <div className="rounded-[30px] border border-white/70 bg-white/82 p-5 shadow-[0_28px_80px_rgba(15,23,42,0.08)] backdrop-blur">
               <div className="flex items-start gap-4">
                 <div className="h-16 w-16 overflow-hidden rounded-[22px] bg-stone-100 shadow-inner ring-1 ring-black/5">
                   {cafe?.logo ? (
-                    <img
-                      src={cafe.logo}
-                      alt="Cafe Logo"
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={cafe.logo} alt="Cafe Logo" className="h-full w-full object-cover" />
                   ) : (
                     <div className="theme-primary flex h-full w-full items-center justify-center text-xl font-bold text-white">
                       {cafeInitial}
                     </div>
                   )}
                 </div>
-
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Cafe profile
-                  </p>
-                  <h2 className="mt-2 truncate text-xl font-semibold text-slate-900">
-                    {cafe?.name || "Cafe"}
-                  </h2>
-                  <p className="mt-1 text-[10px] text-slate-500">
-                    {cafe?.category || "Cafe"} operations dashboard
-                  </p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Cafe profile</p>
+                  <h2 className="mt-2 truncate text-xl font-semibold text-slate-900">{cafe?.name || "Cafe"}</h2>
+                  <p className="mt-1 text-[10px] text-slate-500">{cafe?.category || "Cafe"} operations dashboard</p>
                 </div>
               </div>
 
               {cafe?.description ? (
-                <p className="mt-5 text-sm leading-6 text-slate-600">
-                  {cafe.description}
-                </p>
+                <p className="mt-5 text-sm leading-6 text-slate-600">{cafe.description}</p>
               ) : (
                 <p className="mt-5 text-sm leading-6 text-slate-500">
-                  Manage orders, menu items, and business settings from one
-                  place.
+                  Manage orders, menu items, and business settings from one place.
                 </p>
               )}
 
-              {cafeLocation || businessPhone ? (
-                <div className="mt-5 flex items-start gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3 text-[12px] text-slate-600 flex-col">
-                  {cafeLocation ? (
+              {(cafeLocation || businessPhone) && (
+                <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3 text-[12px] text-slate-600">
+                  {cafeLocation && (
                     <div className="flex items-start gap-2">
                       <FiMapPin className="mt-0.5 shrink-0 text-slate-400" />
                       <span>{cafeLocation}</span>
                     </div>
-                  ) : null}
-
-                  {businessPhone ? (
+                  )}
+                  {businessPhone && (
                     <div className="flex items-start gap-2">
                       <FiPhone className="mt-0.5 shrink-0 text-slate-400" />
-                      <a
-                        href={`tel:${businessPhone}`}
-                        className="transition hover:text-slate-900"
-                      >
-                        {businessPhone}
-                      </a>
+                      <a href={`tel:${businessPhone}`} className="transition hover:text-slate-900">{businessPhone}</a>
                     </div>
-                  ) : null}
+                  )}
                 </div>
-              ) : null}
-
-              {/* <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-stone-100 px-3 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                      Live
-                    </p>
-                    <p className="mt-1 text-xl font-semibold text-slate-900">
-                      {liveCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-amber-50 px-3 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-amber-700">
-                      Pending
-                    </p>
-                    <p className="mt-1 text-xl font-semibold text-amber-900">
-                      {pendingCount}
-                    </p>
-                  </div>
-                </div> */}
+              )}
             </div>
 
+            {/* Nav */}
             <div className="rounded-[30px] border border-white/70 bg-white/82 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.06)] backdrop-blur">
               <div className="px-2 pb-2 pt-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  Workspace
-                </p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Workspace</p>
               </div>
-
               <div className="space-y-2">
                 {navItems.map((item) => (
                   <DashboardNavButton
@@ -334,35 +233,26 @@ const Dashboard = () => {
                     description={item.description}
                     icon={item.icon}
                     label={item.label}
-                    onClick={() => {
-                      setActivePage(item.key);
-                      setSidebarOpen(false);
-                    }}
+                    onClick={() => { setActivePage(item.key); setSidebarOpen(false); }}
                   />
                 ))}
               </div>
             </div>
 
+            {/* Footer */}
             <div className="mt-auto rounded-[30px] border border-white/70 bg-white/82 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.06)] backdrop-blur">
               <div className="mb-4 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3">
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                    <FiRadio className="text-emerald-600" />
-                    Live sync
+                    <FiRadio className="text-emerald-600" /> Live sync
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    Active
-                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">Active</p>
                 </div>
-
                 <div className="rounded-2xl border border-stone-200 bg-stone-50 px-3 py-3">
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                    <FiVolume2 className="text-slate-700" />
-                    Audio
+                    <FiVolume2 className="text-slate-700" /> Audio
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    Tap to enable
-                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">Tap to enable</p>
                 </div>
               </div>
 
@@ -370,21 +260,12 @@ const Dashboard = () => {
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100">
                   <FiPhone className="text-sm text-slate-600" />
                 </div>
-
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                    Customer care
-                  </p>
-
-                  <a
-                    href={`tel:${CUSTOMER_CARE_PHONE}`}
-                    className="mt-1 block text-sm font-medium text-slate-700 hover:text-slate-900"
-                  >
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Customer care</p>
+                  <a href={`tel:${CUSTOMER_CARE_PHONE}`} className="mt-1 block text-sm font-medium text-slate-700 hover:text-slate-900">
                     {CUSTOMER_CARE_PHONE}
                   </a>
                 </div>
-
-                
               </div>
 
               <LogoutBtn className="theme-primary theme-primary-hover w-full justify-center rounded-2xl px-4 py-3 text-sm font-medium text-white transition" />
@@ -392,6 +273,7 @@ const Dashboard = () => {
           </div>
         </aside>
 
+        {/* Main content */}
         <div className="flex min-w-0 flex-1 flex-col md:ml-[320px]">
           <header className="sticky top-0 z-30 px-4 pb-2 pt-4 sm:px-6 lg:px-8">
             <div className="rounded-[30px] border border-white/75 bg-white/70 px-4 py-4 shadow-[0_24px_70px_rgba(15,23,42,0.07)] backdrop-blur sm:px-6">
@@ -406,11 +288,7 @@ const Dashboard = () => {
 
                   <div className="hidden h-12 w-12 overflow-hidden rounded-[18px] bg-stone-100 shadow-inner ring-1 ring-black/5 sm:block">
                     {cafe?.logo ? (
-                      <img
-                        src={cafe.logo}
-                        alt="Cafe Logo"
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={cafe.logo} alt="Cafe Logo" className="h-full w-full object-cover" />
                     ) : (
                       <div className="theme-primary flex h-full w-full items-center justify-center text-lg font-semibold text-white">
                         {cafeInitial}
@@ -433,30 +311,16 @@ const Dashboard = () => {
 
                 <div className="hidden sm:grid grid-cols-1 gap-3 sm:grid-cols-3 xl:min-w-[420px]">
                   <div className="rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Active orders
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">
-                      {liveCount}
-                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Active orders</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{liveCount}</p>
                   </div>
-
                   <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
-                      Needs action
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-amber-900">
-                      {pendingCount}
-                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Needs action</p>
+                    <p className="mt-2 text-2xl font-semibold text-amber-900">{pendingCount}</p>
                   </div>
-
                   <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                      Service sync
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-emerald-900">
-                      Realtime connected
-                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Service sync</p>
+                    <p className="mt-2 text-sm font-semibold text-emerald-900">Realtime connected</p>
                   </div>
                 </div>
               </div>
@@ -473,12 +337,9 @@ const Dashboard = () => {
                 loadingActions={loadingActions}
               />
             )}
-
             {activePage === "menu" && <MenuSection />}
-
-            {activePage === "settings" && (
-              <SettingsSection updateCafeData={updateCafeData} />
-            )}
+            {activePage === "billing" && <BillingSection />}
+            {activePage === "settings" && <SettingsSection updateCafeData={updateCafeData} />}
           </main>
         </div>
       </div>

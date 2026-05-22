@@ -1,20 +1,45 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import API from "../api/api";
-import AuthContext from "./auth-context";
+
+const AuthContext = createContext();
 
 const readStoredCafe = () => {
   try {
     const storedCafe = localStorage.getItem("cafe");
+
     return storedCafe ? JSON.parse(storedCafe) : null;
-  } catch {
+  } catch (error) {
+    console.error("Failed to parse cafe:", error);
+
     localStorage.removeItem("cafe");
+
     return null;
   }
 };
 
+const saveCafe = (data) => {
+  localStorage.setItem("cafe", JSON.stringify(data));
+};
+
+const clearStorage = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("cafe");
+};
+
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token");
+  });
+
   const [cafe, setCafe] = useState(readStoredCafe);
+
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -26,6 +51,7 @@ export const AuthProvider = ({ children }) => {
           setCafe(null);
           setIsReady(true);
         }
+
         return;
       }
 
@@ -35,12 +61,15 @@ export const AuthProvider = ({ children }) => {
         if (!isMounted) return;
 
         setCafe(res.data);
-        localStorage.setItem("cafe", JSON.stringify(res.data));
-      } catch {
+
+        saveCafe(res.data);
+      } catch (error) {
+        console.error("Auth bootstrap failed:", error);
+
         if (!isMounted) return;
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("cafe");
+        clearStorage();
+
         setToken(null);
         setCafe(null);
       } finally {
@@ -50,7 +79,6 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    setIsReady(false);
     void bootstrapAuth();
 
     return () => {
@@ -60,23 +88,27 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback((nextToken, nextCafe) => {
     localStorage.setItem("token", nextToken);
-    localStorage.setItem("cafe", JSON.stringify(nextCafe));
+
+    saveCafe(nextCafe);
+
     setToken(nextToken);
     setCafe(nextCafe);
+
     setIsReady(true);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("cafe");
+    clearStorage();
+
     setToken(null);
     setCafe(null);
+
     setIsReady(true);
   }, []);
 
   const updateCafe = useCallback((nextCafe) => {
     if (nextCafe) {
-      localStorage.setItem("cafe", JSON.stringify(nextCafe));
+      saveCafe(nextCafe);
     } else {
       localStorage.removeItem("cafe");
     }
@@ -87,37 +119,74 @@ export const AuthProvider = ({ children }) => {
   const refreshCafe = useCallback(async () => {
     if (!token) return null;
 
-    const res = await API.get("/auth/me");
-    updateCafe(res.data);
-    return res.data;
+    try {
+      const res = await API.get("/auth/me");
+
+      updateCafe(res.data);
+
+      return res.data;
+    } catch (error) {
+      console.error("Failed to refresh cafe:", error);
+
+      return null;
+    }
   }, [token, updateCafe]);
 
-  const authenticateWithToken = useCallback(async (nextToken) => {
-    const res = await API.get("/auth/me", {
-      headers: {
-        Authorization: `Bearer ${nextToken}`,
-      },
-    });
+  const authenticateWithToken = useCallback(
+    async (nextToken) => {
+      try {
+        const res = await API.get("/auth/me", {
+          headers: {
+            Authorization: `Bearer ${nextToken}`,
+          },
+        });
 
-    login(nextToken, res.data);
-    return res.data;
-  }, [login]);
+        login(nextToken, res.data);
+
+        return res.data;
+      } catch (error) {
+        console.error("Token authentication failed:", error);
+
+        clearStorage();
+
+        setToken(null);
+        setCafe(null);
+
+        return null;
+      }
+    },
+    [login]
+  );
+
+  const value = useMemo(() => {
+    return {
+      token,
+      cafe,
+      isReady,
+      isAuthenticated: Boolean(token && cafe),
+
+      login,
+      logout,
+      updateCafe,
+      refreshCafe,
+      authenticateWithToken,
+    };
+  }, [
+    token,
+    cafe,
+    isReady,
+    login,
+    logout,
+    updateCafe,
+    refreshCafe,
+    authenticateWithToken,
+  ]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        token,
-        cafe,
-        isReady,
-        isAuthenticated: Boolean(token),
-        login,
-        logout,
-        updateCafe,
-        refreshCafe,
-        authenticateWithToken,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

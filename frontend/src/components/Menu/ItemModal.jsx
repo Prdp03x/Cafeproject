@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiMinus, FiPlus, FiX } from "react-icons/fi";
 import { FaCheckCircle } from "react-icons/fa";
+import { withGST } from '../../utils/gst'
 
 const CURRENCY_SYMBOL = "\u20B9";
 
@@ -67,7 +68,7 @@ const ItemModal = ({ item, onClose, addToCart }) => {
       .flat()
       .reduce((sum, option) => sum + (option.price || 0), 0);
 
-  const totalPrice = (item.price + getExtraPrice()) * quantity;
+  const totalPrice = Math.round((item.price + getExtraPrice()) * quantity * 1.05 * 100) / 100
 
   return (
     <div
@@ -155,7 +156,7 @@ const ItemModal = ({ item, onClose, addToCart }) => {
                               }`}
                             >
                               {choice.name} (+{CURRENCY_SYMBOL}
-                              {choice.price})
+                              {Math.round(withGST(choice.price))})
                             </button>
                           );
                         })}
@@ -169,68 +170,12 @@ const ItemModal = ({ item, onClose, addToCart }) => {
             <div className="border-t border-slate-100 bg-white px-5 py-4 sm:px-6 lg:px-8 lg:py-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Total</p>
+                  <p className="text-sm text-slate-500">Total <span className="text-[10px] text-slate-400">(incl. GST)</span></p>
                   <div className="text-2xl font-bold text-slate-900">
-                    {CURRENCY_SYMBOL} {totalPrice}
+                    {CURRENCY_SYMBOL} {Math.round(totalPrice)}
                   </div>
                 </div>
 
-                {/* <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="flex items-center gap-3 rounded-full bg-slate-100 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((count) => Math.max(1, count - 1))}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm"
-                    >
-                      <FiMinus />
-                    </button>
-
-                    <span className="min-w-8 text-center font-medium text-slate-900">
-                      {quantity}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((count) => count + 1)}
-                      className="theme-primary theme-primary-hover flex h-10 w-10 items-center justify-center rounded-full"
-                    >
-                      <FiPlus className="text-white" />
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={added}
-                    onClick={() => {
-                      if (added) {
-                        return;
-                      }
-
-                      addToCart(item, quantity, {
-                        [item._id]: options,
-                      });
-
-                      setAdded(true);
-
-                      setTimeout(() => {
-                        handleClose();
-                      }, 250);
-                    }}
-                    className={`min-w-44 rounded-full px-6 py-3 font-medium text-white transition-all duration-300 ${
-                      added
-                        ? "theme-primary"
-                        : "theme-primary theme-primary-hover shadow-lg shadow-[var(--brand-color-shadow)]"
-                    }`}
-                  >
-                    {added ? (
-                      <span className="flex items-center justify-center gap-2 whitespace-nowrap">
-                        Added <FaCheckCircle />
-                      </span>
-                    ) : (
-                      `Add ${CURRENCY_SYMBOL} ${totalPrice}`
-                    )}
-                  </button>
-                </div> */}
                 {/* Quantity */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3 bg-gray-100 rounded-full p-2">
@@ -282,7 +227,7 @@ const ItemModal = ({ item, onClose, addToCart }) => {
                         Added <FaCheckCircle />
                       </div>
                     ) : (
-                      `Add ₹ ${totalPrice}`
+                      `Add ₹ ${Math.round(totalPrice)}`
                     )}
                   </button>
                 </div>

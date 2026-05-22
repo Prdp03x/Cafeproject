@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import API from "../api/api";
 import { useNavigate } from "react-router";
-import GoogleLoginButton from "../components/Common/GoogleLoginButton";
+import GoogleLoginButton from "../components/common/GoogleLoginButton";
 import { HiOutlineMail, HiOutlineLockClosed } from "react-icons/hi";
 import useAuth from "../hooks/useAuth";
 

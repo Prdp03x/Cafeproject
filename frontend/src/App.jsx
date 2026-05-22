@@ -2,12 +2,12 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import Menu from "./pages/Menu";
 import Dashboard from "./pages/Dashboard";
 import OrderStatus from "./pages/OrderStatus";
-import ProtectedRoute from "./components/Common/ProtectedRoute";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 import Login from "./pages/Login";
 import GoogleSuccess from "./pages/GoogleSuccess";
 import Signup from "./pages/Signup";
 import Settings from "./pages/Settings";
-import AdminPanel from "./pages/AdminPanel";
+import MenuManagement from "./pages/MenuManagement";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -39,7 +39,7 @@ function App() {
             path="/dashboard/menu"
             element={
               <ProtectedRoute>
-                <AdminPanel />
+                <MenuManagement />
               </ProtectedRoute>
             }
           />

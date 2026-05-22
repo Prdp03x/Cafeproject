@@ -1,4 +1,4 @@
-import MenuSkeleton from "../Loader/MenuSkeleton";
+import MenuSkeleton from "../common/MenuSkeleton";
 import MenuCard from "./MenuCard";
 
 const MenuContent = ({

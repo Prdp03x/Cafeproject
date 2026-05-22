@@ -6,7 +6,8 @@ const CartItem = ({ item, removeFromCart, addToCart }) => {
   const extrasTotal =
     item.selectedOptions?.reduce((s, o) => s + o.price, 0) || 0;
 
-  const itemTotal = (item.price + extrasTotal) * item.qty;
+  // const itemTotal = (item.price + extrasTotal) * item.qty;
+  const itemTotal = Math.round((item.price + extrasTotal) * item.qty * 1.05 * 100) / 100;
 
   return (
     <div className="flex gap-3 py-3 border-b border-gray-400">
@@ -65,7 +66,7 @@ const CartItem = ({ item, removeFromCart, addToCart }) => {
 
           {/* Price */}
           <span className="font-semibold text-gray-900">
-            ₹ {itemTotal}
+            ₹ {Math.round(itemTotal)}
           </span>
 
         </div>

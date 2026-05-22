@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
-import socket from "../socket";
+import socket from "../lib/socket";
 
 const useOrderCount = (cafeId, tableNumber) => {
   const [orderCount, setOrderCount] = useState(0);

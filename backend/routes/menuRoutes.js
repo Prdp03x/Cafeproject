@@ -1,33 +1,31 @@
 const express = require("express");
 const router = express.Router();
-const Menu = require("../models/Menu");
+const MenuItem = require("../models/MenuItem");
 const auth = require("../middleware/auth");
+const adminOnly = require("../middleware/adminOnly");
+const menuController = require("../controllers/menuController");
 
-// 🔥 GET MENU BY CAFE + CATEGORY
+// Public routes (customer-facing)
+// GET /api/menu?cafeId=xxx&category=yyy
 router.get("/", async (req, res) => {
   try {
     const { cafeId, category } = req.query;
 
-    // ❗ cafeId is REQUIRED now
     if (!cafeId) {
       return res.status(400).json({ error: "cafeId is required" });
     }
-    
-    let filter = { cafeId };
 
-    if (category) {
-      filter.category = category;
-    }
+    const filter = { cafeId };
+    if (category) filter.category = category;
 
-const items = await Menu.find(filter);
-
+    const items = await MenuItem.find(filter);
     res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔥 GET CATEGORIES BY CAFE
+// GET /api/menu/categories?cafeId=xxx
 router.get("/categories", async (req, res) => {
   try {
     const { cafeId } = req.query;
@@ -36,66 +34,24 @@ router.get("/categories", async (req, res) => {
       return res.status(400).json({ error: "cafeId is required" });
     }
 
-    const categories = await Menu.distinct("category", { cafeId });
-
+    const categories = await MenuItem.distinct("category", { cafeId });
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔥 CREATE MENU ITEM (Post Routes)
-router.post("/", async (req, res) => {
-  try {
-    const item = new Menu(req.body);
-    await item.save();
+// Protected routes (dashboard / admin only)
+// GET /api/menu/manage — owner views their full menu
+router.get("/manage", auth, menuController.getMenu);
 
-    res.json(item);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// POST /api/menu — create item
+router.post("/", auth, adminOnly, menuController.createMenuItem);
 
-// 🔥 UPDATE MENU ITEM (THIS IS NEW)
-router.put("/:id", auth, async (req, res) => {
-  try {
-    const updatedItem = await Menu.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        cafeId: req.cafeId, // 🔐 only allow own cafe
-      },
-      req.body,
-      { returnDocument: true }
-    );
+// PUT /api/menu/:id — update item
+router.put("/:id", auth, adminOnly, menuController.updateMenuItem);
 
-    if (!updatedItem) {
-      return res.status(404).json({ error: "Item not found" });
-    }
-
-    res.json(updatedItem);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// DELETE ITEMS FROM MENU
-router.delete("/:id", auth, async (req, res) => {
-  try {
-    const deletedItem = await Menu.findOneAndDelete({
-      _id: req.params.id,
-      cafeId: req.cafeId,
-    });
-
-    if (!deletedItem) {
-      return res.status(404).json({ error: "Menu item not found" });
-    }
-
-    res.json({ message: "Item deleted successfully" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// DELETE /api/menu/:id — delete item
+router.delete("/:id", auth, adminOnly, menuController.deleteMenuItem);
 
 module.exports = router;

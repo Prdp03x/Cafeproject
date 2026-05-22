@@ -1,7 +1,7 @@
 const FloatingCart = ({ show, itemCount, total, onClick }) => {
   return (
     <div
-      className={`theme-primary fixed bottom-4 left-1/2 z-50 flex w-[92%] max-w-md -translate-x-1/2 items-center justify-between rounded-xl px-4 py-3 text-white shadow-xl transition-all duration-300 lg:hidden ${
+      className={`theme-primary fixed bottom-4 left-1/2 z-50 flex w-[92%] max-w-md -translate-x-1/2 items-center justify-between rounded-xl px-4 py-3 text-white shadow-xl transition-all duration-300 ${
         show
           ? "translate-y-0 opacity-100"
           : "translate-y-20 opacity-0 pointer-events-none"
@@ -11,7 +11,7 @@ const FloatingCart = ({ show, itemCount, total, onClick }) => {
         <p className="text-sm opacity-90">
           {itemCount} item{itemCount > 1 && "s"}
         </p>
-        <p className="text-lg font-semibold">{"\u20B9"}{total}</p>
+        <p className="text-lg font-semibold">{"\u20B9"}{Math.round(total)}</p>
       </div>
 
       <button

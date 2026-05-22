@@ -1,7 +1,7 @@
 const Order = require("../models/Order");
 const mongoose = require("mongoose");
 
-// 🔥 CREATE ORDER
+// CREATE ORDER
 exports.createOrder = async (req, res) => {
   try {
     const { items, tableNumber, sessionId, cafeId } = req.body;
@@ -25,7 +25,6 @@ exports.createOrder = async (req, res) => {
     const total = items.reduce((sum, item) => {
       const extras =
         item.selectedOptions?.reduce((s, opt) => s + opt.price, 0) || 0;
-
       return sum + (item.price + extras) * item.qty;
     }, 0);
 
@@ -40,7 +39,6 @@ exports.createOrder = async (req, res) => {
 
     await newOrder.save();
 
-    // 🔥 SOCKET
     const io = req.app.get("io");
     io.to(cafeId).emit("newOrder", newOrder);
 
@@ -54,10 +52,10 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// 🔥 ADMIN ORDERS
+// ADMIN ORDERS (live queue - excludes orders removed from queue)
 exports.getAdminOrders = async (req, res) => {
   try {
-    const cafeId = req.cafeId; // ✅ from auth middleware
+    const cafeId = req.cafeId;
 
     if (!cafeId) {
       return res.status(400).json({ error: "Cafe ID missing in token" });
@@ -65,16 +63,71 @@ exports.getAdminOrders = async (req, res) => {
 
     const orders = await Order.find({
       cafeId: new mongoose.Types.ObjectId(cafeId),
+      archivedFromQueue: { $ne: true },
     }).sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (err) {
-    console.error(err); // 🔥 useful for debugging
+    console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-// 🔥 CUSTOMER ORDERS
+// BILLING ORDERS - all orders for a given date (default: today)
+exports.getBillingOrders = async (req, res) => {
+  try {
+    const cafeId = req.cafeId;
+
+    if (!cafeId) {
+      return res.status(400).json({ error: "Cafe ID missing in token" });
+    }
+
+    // Accept ?date=YYYY-MM-DD, default to today in IST
+    const { date } = req.query;
+
+    let startOfDay, endOfDay;
+
+    if (date) {
+      // Parse as local midnight
+      startOfDay = new Date(`${date}T00:00:00.000Z`);
+      endOfDay = new Date(`${date}T23:59:59.999Z`);
+    } else {
+      // Today UTC (server runs UTC; frontend can pass explicit date)
+      const now = new Date();
+      startOfDay = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0)
+      );
+      endOfDay = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999)
+      );
+    }
+
+    const orders = await Order.find({
+      cafeId: new mongoose.Types.ObjectId(cafeId),
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    }).sort({ createdAt: -1 });
+
+    // Compute summary
+    const summary = {
+      total: orders.length,
+      completed: orders.filter((o) => o.status === "completed").length,
+      cancelled: orders.filter((o) => o.status === "cancelled").length,
+      pending: orders.filter((o) => o.status === "pending").length,
+      preparing: orders.filter((o) => o.status === "preparing").length,
+      revenue: orders
+        .filter((o) => o.status === "completed")
+        .reduce((sum, o) => sum + (o.total || 0), 0),
+      grossTotal: orders.reduce((sum, o) => sum + (o.total || 0), 0),
+    };
+
+    res.json({ orders, summary });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// CUSTOMER ORDERS
 exports.getCustomerOrders = async (req, res) => {
   try {
     const { cafeId, tableNumber } = req.query;
@@ -90,6 +143,7 @@ exports.getCustomerOrders = async (req, res) => {
     const orders = await Order.find({
       cafeId: new mongoose.Types.ObjectId(cafeId),
       tableNumber: String(tableNumber),
+      archivedFromQueue: { $ne: true }, 
     }).sort({ createdAt: -1 });
 
     res.json(orders);
@@ -98,7 +152,7 @@ exports.getCustomerOrders = async (req, res) => {
   }
 };
 
-// 🔥 UPDATE ORDER
+// UPDATE ORDER STATUS (includes cancel)
 exports.updateOrder = async (req, res) => {
   try {
     const { status } = req.body;
@@ -107,25 +161,22 @@ exports.updateOrder = async (req, res) => {
       return res.status(400).json({ error: "Status is required" });
     }
 
+    const VALID_STATUSES = ["pending", "preparing", "completed", "cancelled"];
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+
     const updatedOrder = await Order.findOneAndUpdate(
       { _id: req.params.id, cafeId: req.cafeId },
       { status },
-      { returnDocument: true },
+      { new: true }
     );
 
     if (!updatedOrder) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    // const io = req.app.get("io");
-    // io.to(req.cafeId.toString()).emit("orderUpdated", {
-    //   id: req.params.id,
-    //   status,
-    // });
-
-    // res.json({ message: "Order updated" });
     const io = req.app.get("io");
-
     io.to(req.cafeId.toString()).emit("orderUpdated", updatedOrder);
 
     res.json({
@@ -137,31 +188,32 @@ exports.updateOrder = async (req, res) => {
   }
 };
 
-// 🔥 DELETE ORDER
+// ARCHIVE ORDER FROM QUEUE - soft delete (keeps in DB for billing)
 exports.deleteOrder = async (req, res) => {
   try {
-    const deletedOrder = await Order.findOneAndDelete({
-      _id: req.params.id,
-      cafeId: req.cafeId,
-    });
+    const updatedOrder = await Order.findOneAndUpdate(
+      { _id: req.params.id, cafeId: req.cafeId },
+      { archivedFromQueue: true },
+      { new: true }
+    );
 
-    if (!deletedOrder) {
+    if (!updatedOrder) {
       return res.status(404).json({ error: "Order not found" });
     }
 
     const io = req.app.get("io");
     io.to(req.cafeId.toString()).emit("orderDeleted", req.params.id);
 
-    res.json({ message: "Order deleted" });
+    res.json({ message: "Order removed from queue", id: req.params.id });
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-// 🔥 GET SINGLE ORDER
+// GET SINGLE ORDER
 exports.getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById({_id: req.params.id});
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });

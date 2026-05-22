@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../../api/api";
-import AddItemModal from "../Admin/AddItemModal";
+import AddItemModal from "../menu/AddItemModal";
 import { toast } from "react-toastify";
 
 const formatCurrency = (value) =>
@@ -20,7 +20,7 @@ const MenuSection = () => {
 
   const fetchMenu = async () => {
     try {
-      const res = await API.get("/dashboard/menu");
+      const res = await API.get("/menu/manage");
       setMenu(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Dashboard menu fetch failed", error);
@@ -33,7 +33,7 @@ const MenuSection = () => {
 
     const loadMenu = async () => {
       try {
-        const res = await API.get("/dashboard/menu");
+        const res = await API.get("/menu/manage");
 
         if (!isMounted) {
           return;

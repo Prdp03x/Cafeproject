@@ -7,21 +7,18 @@ const http = require("http");
 const { Server } = require("socket.io");
 const { globalLimiter } = require("./middleware/rateLimiters");
 
-
 const connectDB = require("./config/db");
 
 const menuRoutes = require("./routes/menuRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
-const cafeRoutes = require("./routes/cafeRoutes")
-const dashboardMenuRoutes = require("./routes/dashboard/menuRoutes");
+const cafeRoutes = require("./routes/cafeRoutes");
 
 const session = require("express-session");
 const passport = require("./config/passport");
 
-
 const app = express();
-const server = http.createServer(app); // ✅ IMPORTANT
+const server = http.createServer(app);
 
 const normalizeOrigin = (origin) => origin?.replace(/\/+$/, "");
 
@@ -45,11 +42,10 @@ const corsOrigin = (origin, callback) => {
   if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
     return callback(null, true);
   }
-
   return callback(new Error(`Origin not allowed by CORS: ${origin}`));
 };
 
-// 🔥 SOCKET SETUP
+// Socket.io setup
 const io = new Server(server, {
   cors: {
     origin: corsOrigin,
@@ -58,10 +54,8 @@ const io = new Server(server, {
   },
 });
 
-// 🔥 MAKE IO GLOBAL
 app.set("io", io);
 
-// 🔥 SOCKET EVENTS
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -96,24 +90,18 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(globalLimiter);
 
-
 // Routes
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cafes", cafeRoutes);
-app.use("/api/dashboard/menu", dashboardMenuRoutes);
 
-
-// 🔥 START SERVER (IMPORTANT CHANGE)
+// Start server
 const startServer = async () => {
   await connectDB();
-
   const PORT = process.env.PORT || 5000;
-
   server.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
-    console.log("Allowed CORS origins:", Array.from(allowedOrigins).join(", "));
   });
 };
 

@@ -108,10 +108,10 @@ const AddItemModal = ({ onClose, refresh, editItem }) => {
       };
 
       if (editItem) {
-        await API.put(`/dashboard/menu/${editItem._id}`, payload);
+        await API.put(`/menu/${editItem._id}`, payload);
         toast.success("Changes saved successfully");
       } else {
-        await API.post("/dashboard/menu", payload);
+        await API.post("/menu", payload);
         toast.success("Item added successfully");
       }
 
@@ -136,7 +136,7 @@ const AddItemModal = ({ onClose, refresh, editItem }) => {
 
     try {
       setDeleting(true);
-      await API.delete(`/dashboard/menu/${editItem._id}`);
+      await API.delete(`/menu/${editItem._id}`);
       toast.success("Item deleted successfully");
       refresh();
       onClose();

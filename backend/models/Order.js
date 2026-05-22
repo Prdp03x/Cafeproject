@@ -12,7 +12,6 @@ const orderSchema = new mongoose.Schema(
         name: String,
         price: Number,
         qty: Number,
-        // 🔥 THIS IS THE IMPORTANT PART
         selectedOptions: [
           {
             name: String,
@@ -23,10 +22,18 @@ const orderSchema = new mongoose.Schema(
     ],
     total: Number,
     tableNumber: {
-      type: Number,
+      type: String,
       required: true,
     },
-    status: String,
+    status: {
+      type: String,
+      enum: ["pending", "preparing", "completed", "cancelled"],
+      default: "pending",
+    },
+    archivedFromQueue: {
+      type: Boolean,
+      default: false,
+    },
     sessionId: {
       type: String,
       required: true,

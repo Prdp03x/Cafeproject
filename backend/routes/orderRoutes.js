@@ -8,27 +8,25 @@ const {
   createOrder,
   getAdminOrders,
   getCustomerOrders,
+  getBillingOrders,
   updateOrder,
   deleteOrder,
   getOrderById,
 } = require("../controllers/orderController");
 
-// CREATE
-router.post("/", orderLimiter,createOrder);
-
-// ADMIN
-router.get("/admin", auth, adminOnly, getAdminOrders);
-
-// CUSTOMER
+// PUBLIC
+router.post("/", orderLimiter, createOrder);
 router.get("/customer", getCustomerOrders);
 
-// UPDATE
-router.put("/:id", auth, adminOnly, updateOrder);
+// ADMIN (specific paths BEFORE /:id wildcard)
+router.get("/admin", auth, adminOnly, getAdminOrders);
+router.get("/billing", auth, adminOnly, getBillingOrders);
 
-// DELETE
-router.delete("/:id", auth, adminOnly, deleteOrder);
-
-// GET SINGLE
+// WILDCARD - single order lookup
 router.get("/:id", getOrderById);
+
+// ADMIN mutations
+router.put("/:id", auth, adminOnly, updateOrder);
+router.delete("/:id", auth, adminOnly, deleteOrder);
 
 module.exports = router;

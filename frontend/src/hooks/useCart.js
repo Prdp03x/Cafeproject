@@ -67,12 +67,13 @@ if (existing) {
 };
 
 
-  const total = cart.reduce((sum, item) => {
-    const extras =
-      item.selectedOptions?.reduce((s, opt) => s + opt.price, 0) || 0;
-
+  const total = Math.round(
+  cart.reduce((sum, item) => {
+    const extras = item.selectedOptions?.reduce((s, opt) => s + opt.price, 0) || 0;
     return sum + (item.price + extras) * item.qty;
-  }, 0);
+  }, 0) * 1.05 * 100
+) / 100;
+
 
   const removeFromCart = (item) => {
   setCart((prev) =>

@@ -78,6 +78,12 @@ const cafeSchema = new mongoose.Schema(
       },
     },
 
+    fssaiNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     address: {
       type: String,
       trim: true,
@@ -126,7 +132,7 @@ const cafeSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Cafe", cafeSchema);
