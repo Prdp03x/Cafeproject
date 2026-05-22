@@ -82,6 +82,11 @@ exports.getBillingOrders = async (req, res) => {
       return res.status(400).json({ error: "Cafe ID missing in token" });
     }
 
+    // ✅ ADD THIS CHECK
+    if (!mongoose.Types.ObjectId.isValid(cafeId)) {
+      return res.status(400).json({ error: "Invalid cafe ID in token" });
+    }
+
     // Accept ?date=YYYY-MM-DD, default to today in IST
     const { date } = req.query;
 
