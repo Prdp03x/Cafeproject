@@ -2,7 +2,7 @@ import { FcGoogle } from "react-icons/fc";
 
 const GoogleLoginButton = () => {
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:5000/api/auth/google"; // your backend route
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`; // your backend route
   };
 
   return (

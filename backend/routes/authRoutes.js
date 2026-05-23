@@ -223,6 +223,7 @@ router.get("/me", auth, async (req, res) => {
       state: cafe.state,
       postalCode: cafe.postalCode,
       country: cafe.country,
+      googleId: cafe.googleId || null,   // for Google Auth users
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

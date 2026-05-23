@@ -24,7 +24,16 @@ const cafeSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
+      // Not required for Google OAuth users — they have no password
+      required: function () {
+        return !this.googleId;
+      },
+      default: null,
+    },
+
+    googleId: {
+      type: String,
+      default: null,
     },
 
     logo: {

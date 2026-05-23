@@ -52,7 +52,7 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// ADMIN ORDERS (live queue - excludes orders removed from queue)
+// ADMIN ORDERS (live queue — excludes orders removed from queue)
 exports.getAdminOrders = async (req, res) => {
   try {
     const cafeId = req.cafeId;
@@ -73,7 +73,7 @@ exports.getAdminOrders = async (req, res) => {
   }
 };
 
-// BILLING ORDERS - all orders for a given date (default: today)
+// BILLING ORDERS — all orders for a given date
 exports.getBillingOrders = async (req, res) => {
   try {
     const cafeId = req.cafeId;
@@ -82,22 +82,18 @@ exports.getBillingOrders = async (req, res) => {
       return res.status(400).json({ error: "Cafe ID missing in token" });
     }
 
-    // ✅ ADD THIS CHECK
     if (!mongoose.Types.ObjectId.isValid(cafeId)) {
       return res.status(400).json({ error: "Invalid cafe ID in token" });
     }
 
-    // Accept ?date=YYYY-MM-DD, default to today in IST
     const { date } = req.query;
 
     let startOfDay, endOfDay;
 
     if (date) {
-      // Parse as local midnight
       startOfDay = new Date(`${date}T00:00:00.000Z`);
-      endOfDay = new Date(`${date}T23:59:59.999Z`);
+      endOfDay   = new Date(`${date}T23:59:59.999Z`);
     } else {
-      // Today UTC (server runs UTC; frontend can pass explicit date)
       const now = new Date();
       startOfDay = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0)
@@ -112,14 +108,13 @@ exports.getBillingOrders = async (req, res) => {
       createdAt: { $gte: startOfDay, $lte: endOfDay },
     }).sort({ createdAt: -1 });
 
-    // Compute summary
     const summary = {
-      total: orders.length,
+      total:     orders.length,
       completed: orders.filter((o) => o.status === "completed").length,
       cancelled: orders.filter((o) => o.status === "cancelled").length,
-      pending: orders.filter((o) => o.status === "pending").length,
+      pending:   orders.filter((o) => o.status === "pending").length,
       preparing: orders.filter((o) => o.status === "preparing").length,
-      revenue: orders
+      revenue:   orders
         .filter((o) => o.status === "completed")
         .reduce((sum, o) => sum + (o.total || 0), 0),
       grossTotal: orders.reduce((sum, o) => sum + (o.total || 0), 0),
@@ -148,7 +143,7 @@ exports.getCustomerOrders = async (req, res) => {
     const orders = await Order.find({
       cafeId: new mongoose.Types.ObjectId(cafeId),
       tableNumber: String(tableNumber),
-      archivedFromQueue: { $ne: true }, 
+      archivedFromQueue: { $ne: true },
     }).sort({ createdAt: -1 });
 
     res.json(orders);
@@ -157,10 +152,10 @@ exports.getCustomerOrders = async (req, res) => {
   }
 };
 
-// UPDATE ORDER STATUS (includes cancel)
+// UPDATE ORDER STATUS
 exports.updateOrder = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, cancelReason, cancelNote } = req.body;
 
     if (!status) {
       return res.status(400).json({ error: "Status is required" });
@@ -171,9 +166,33 @@ exports.updateOrder = async (req, res) => {
       return res.status(400).json({ error: "Invalid status value" });
     }
 
+    // ── Validate cancel reason when cancelling ────────────────────────────
+    const VALID_REASONS = ["entry_error", "customer_changed_mind", "item_unavailable", "other"];
+
+    if (status === "cancelled") {
+      if (!cancelReason) {
+        return res.status(400).json({ error: "Cancel reason is required" });
+      }
+      if (!VALID_REASONS.includes(cancelReason)) {
+        return res.status(400).json({ error: "Invalid cancel reason" });
+      }
+    }
+
+    // Build update payload
+    const updatePayload = { status };
+
+    if (status === "cancelled") {
+      updatePayload.cancelReason  = cancelReason;
+      updatePayload.cancelNote    = cancelNote?.trim()?.slice(0, 200) || null;
+      updatePayload.cancelledAt   = new Date();
+      updatePayload.cancelledBy   = "staff";
+      // Also archive from live queue — cancelled orders don't belong in kitchen view
+      updatePayload.archivedFromQueue = true;
+    }
+
     const updatedOrder = await Order.findOneAndUpdate(
       { _id: req.params.id, cafeId: req.cafeId },
-      { status },
+      updatePayload,
       { new: true }
     );
 
@@ -193,7 +212,7 @@ exports.updateOrder = async (req, res) => {
   }
 };
 
-// ARCHIVE ORDER FROM QUEUE - soft delete (keeps in DB for billing)
+// ARCHIVE ORDER FROM QUEUE — soft delete (keeps in DB for billing)
 exports.deleteOrder = async (req, res) => {
   try {
     const updatedOrder = await Order.findOneAndUpdate(

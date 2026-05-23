@@ -38,6 +38,25 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // ── Cancel reason (Feature: Cancel & Reorder) ──────────────────────────
+    cancelReason: {
+      type: String,
+      enum: ["entry_error", "customer_changed_mind", "item_unavailable", "other"],
+      default: null,
+    },
+    cancelNote: {
+      type: String,
+      default: null,
+      maxlength: 200,
+    },
+    cancelledAt: {
+      type: Date,
+      default: null,
+    },
+    cancelledBy: {
+      type: String,   // "staff" — reserved for future role-based tracking
+      default: null,
+    },
   },
   { timestamps: true },
 );

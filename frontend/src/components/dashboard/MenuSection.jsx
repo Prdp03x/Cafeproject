@@ -177,49 +177,114 @@ const MenuSection = () => {
 
             <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {items.map((item) => (
+                // <button
+                //   key={item._id}
+                //   type="button"
+                //   onClick={() => {
+                //     setEditingItem(item);
+                //     setShowModal(true);
+                //   }}
+                //   className="group overflow-hidden rounded-[22px] border border-stone-200 bg-stone-50 text-left transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)]"
+                // >
+                //   <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
+                //     <img
+                //       src={item.image || "https://via.placeholder.com/300"}
+                //       alt={item.name}
+                //       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                //     />
+
+                //     <div className="absolute right-2.5 top-2.5 rounded-full bg-white/92 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
+                //       {formatCurrency(item.price)}
+                //     </div>
+                //   </div>
+
+                //   <div className="space-y-3 p-3.5">
+                //     <div>
+                //       <h4 className="line-clamp-2 text-base font-semibold text-slate-950">
+                //         {item.name}
+                //       </h4>
+
+                //       <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">
+                //         {item.description || "No description added yet."}
+                //       </p>
+                //     </div>
+
+                //     <div className="flex flex-wrap gap-2">
+                //       <span className="rounded-full border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600">
+                //         {item.category || "Uncategorized"}
+                //       </span>
+                //       <span className="rounded-full border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600">
+                //         {item.options?.length || 0} option group
+                //         {item.options?.length === 1 ? "" : "s"}
+                //       </span>
+                //     </div>
+                //   </div>
+                // </button>
                 <button
-                  key={item._id}
-                  type="button"
-                  onClick={() => {
-                    setEditingItem(item);
-                    setShowModal(true);
-                  }}
-                  className="group overflow-hidden rounded-[22px] border border-stone-200 bg-stone-50 text-left transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)]"
-                >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
-                    <img
-                      src={item.image || "https://via.placeholder.com/300"}
-                      alt={item.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
+  key={item._id}
+  type="button"
+  onClick={() => {
+    setEditingItem(item);
+    setShowModal(true);
+  }}
+  className="group w-full overflow-hidden rounded-[22px] border border-stone-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)] active:scale-[0.98] flex items-center gap-3 p-2.5 md:flex-col md:items-stretch md:gap-0 md:p-0"
+>
+  {/* Thumbnail */}
+  <div className="h-12.5 w-12.5 shrink-0 overflow-hidden rounded-[10px] border border-stone-200 bg-stone-100 md:h-auto md:w-auto md:shrink-0 md:rounded-none md:border-0 md:aspect-[16/10]">
+    <img
+      src={item.image || "https://via.placeholder.com/300"}
+      alt={item.name}
+      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+    />
+  </div>
 
-                    <div className="absolute right-2.5 top-2.5 rounded-full bg-white/92 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
-                      {formatCurrency(item.price)}
-                    </div>
-                  </div>
+  {/* Price badge — desktop only */}
+  <div className="hidden md:block relative">
+    <span className="absolute right-2.5 -top-8 rounded-full bg-white/92 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
+      {formatCurrency(item.price)}
+    </span>
+  </div>
 
-                  <div className="space-y-3 p-3.5">
-                    <div>
-                      <h4 className="line-clamp-2 text-base font-semibold text-slate-950">
-                        {item.name}
-                      </h4>
+  {/* Details */}
+  <div className="min-w-0 w-full flex flex-1 flex-col gap-2 md:flex-none md:gap-3 md:p-3.5">
 
-                      <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">
-                        {item.description || "No description added yet."}
-                      </p>
-                    </div>
+    {/* Name + price row */}
+    <div className="min-w-0 w-full flex items-baseline justify-between gap-2 md:block">
+      {/* mobile: single truncated line */}
+      <p className="truncate text-sm font-semibold text-slate-900 md:hidden">
+        {item.name}
+      </p>
+      {/* desktop: two-line clamp */}
+      <p className="hidden w-full min-w-0 line-clamp-2 text-base font-semibold text-slate-900 md:block">
+        {item.name}
+      </p>
+      {/* price — mobile only */}
+      <span className="shrink-0 text-sm font-semibold text-slate-900 md:hidden">
+        {formatCurrency(item.price)}
+      </span>
+    </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600">
-                        {item.category || "Uncategorized"}
-                      </span>
-                      <span className="rounded-full border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600">
-                        {item.options?.length || 0} option group
-                        {item.options?.length === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                  </div>
-                </button>
+    {/* Description — desktop only */}
+    <p className="hidden w-full min-w-0 line-clamp-2 text-xs leading-5 text-slate-500 md:block">
+      {item.description || "No description added yet."}
+    </p>
+
+    {/* Pills */}
+    <div className="flex flex-wrap gap-1.5 md:gap-2">
+      <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-medium text-slate-500 md:bg-white md:px-2 md:py-1">
+        {item.category || "Uncategorized"}
+      </span>
+      <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-medium text-slate-500 md:bg-white md:px-2 md:py-1">
+        {item.options?.length || 0} option group{item.options?.length === 1 ? "" : "s"}
+      </span>
+    </div>
+  </div>
+
+  {/* Chevron — mobile only */}
+  <svg className="h-4 w-4 shrink-0 text-slate-300 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+  </svg>
+</button>
               ))}
             </div>
           </section>

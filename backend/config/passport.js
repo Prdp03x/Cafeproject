@@ -19,8 +19,9 @@ passport.use(
         if (user) {
           // 🔥 Step 2: If exists, just attach googleId (if not already)
           if (!user.googleId) {
+            await Cafe.updateOne({ _id: user._id }, { $set: { googleId: profile.id } });
             user.googleId = profile.id;
-            await user.save();
+            // await user.save();
           }
         } else {
           // 🔥 Step 3: If NOT exists → create new
@@ -39,5 +40,15 @@ passport.use(
     },
   ),
 );
+
+passport.serializeUser((user, done) => done(null, user._id));
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await Cafe.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
 
 module.exports = passport;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import useOrders from "../hooks/useOrders";
 import API from "../api/api";
 import LogoutBtn from "../components/common/LogoutBtn";
@@ -6,6 +6,7 @@ import OrdersSection from "../components/dashboard/OrdersSection";
 import MenuSection from "../components/dashboard/MenuSection";
 import SettingsSection from "../components/dashboard/SettingsSection";
 import BillingSection from "../components/dashboard/BillingSection";
+import CancelReorderModal from "../components/dashboard/CancelReorderModal";
 import socket from "../lib/socket";
 import { FaBars, FaClipboardList, FaCog, FaEdit } from "react-icons/fa";
 import { FiMapPin, FiRadio, FiVolume2, FiPhone, FiDollarSign } from "react-icons/fi";
@@ -80,6 +81,8 @@ const Dashboard = () => {
   const [loadingActions, setLoadingActions] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("orders");
+  const [cancelTarget, setCancelTarget] = useState(null); // { id } — order pending cancel reason
+  const [cancelling, setCancelling] = useState(false);
   useThemeColor(cafe?.themeColor);
 
   useEffect(() => { document.title = "Dashboard | Kitchen"; }, []);
@@ -116,12 +119,16 @@ const Dashboard = () => {
   const isOrderBusy = (id) =>
     Object.keys(loadingActions).some((key) => key.startsWith(`${id}:`));
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = useCallback(async (id, status) => {
+    // Cancel requires a reason — show the modal instead of firing immediately
+    if (status === "cancelled") {
+      setCancelTarget({ id });
+      return;
+    }
     if (isOrderBusy(id)) return;
     setActionLoading(id, status, true);
     try {
       const res = await API.put(`/orders/${id}`, { status });
-      // Optimistically update local state; socket will also fire
       updateOrder(res.data.order);
       toast.success(`Order marked as ${status}`);
     } catch (err) {
@@ -130,7 +137,30 @@ const Dashboard = () => {
     } finally {
       setActionLoading(id, status, false);
     }
-  };
+  }, [updateOrder]); // isOrderBusy reads loadingActions via closure — no dep needed
+
+  const handleConfirmCancelOrder = useCallback(async ({ reason, note }) => {
+    if (!cancelTarget) return;
+    const { id } = cancelTarget;
+    setCancelling(true);
+    setActionLoading(id, "cancelled", true);
+    try {
+      const res = await API.put(`/orders/${id}`, {
+        status: "cancelled",
+        cancelReason: reason,
+        cancelNote: note || null,
+      });
+      updateOrder(res.data.order);
+      toast.success("Order cancelled");
+      setCancelTarget(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.error || "Failed to cancel order");
+    } finally {
+      setCancelling(false);
+      setActionLoading(id, "cancelled", false);
+    }
+  }, [cancelTarget, updateOrder]);
 
   const deleteOrder = async (id) => {
     if (isOrderBusy(id)) return;
@@ -343,7 +373,17 @@ const Dashboard = () => {
           </main>
         </div>
       </div>
+      {/* Cancel & Reorder modal — triggered from Orders queue */}
+      {cancelTarget && (
+        <CancelReorderModal
+          orderId={cancelTarget.id}
+          onConfirm={handleConfirmCancelOrder}
+          onClose={() => { if (!cancelling) setCancelTarget(null); }}
+          cancelling={cancelling}
+        />
+      )}
     </div>
+    // </div>
   );
 };
 
