@@ -34,13 +34,11 @@ const SettingsSection = ({ updateCafeData }) => {
       icon: FiBriefcase,
     },
     // Hide Security tab for Google users — they manage passwords via Google
-    ...(!isGoogleUser && {
-      security: {
+    security: {
         label: "Security",
         description: "Password controls and account protection.",
         icon: FiLock,
       },
-    }),
   };
   const [activeTab, setActiveTab] = useState("branding");
   const [form, setForm] = useState(defaultSettingsForm);

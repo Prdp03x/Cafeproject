@@ -57,12 +57,12 @@ const io = new Server(server, {
 app.set("io", io);
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  // console.log("User connected:", socket.id);
 
   socket.on("joinCafe", (cafeId) => {
     if (!socket.rooms.has(cafeId)) {
       socket.join(cafeId);
-      console.log(`Joined cafe room: ${cafeId}`);
+      // console.log(`Joined cafe room: ${cafeId}`);
     }
   });
 

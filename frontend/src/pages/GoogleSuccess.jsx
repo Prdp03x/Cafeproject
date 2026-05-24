@@ -28,5 +28,5 @@ export default function GoogleSuccess() {
     completeLogin();
   }, [authenticateWithToken, logout, navigate]);
 
-  return <div>Logging you in...</div>;
+  return <div className="flex min-h-screen items-center justify-center bg-[#f4efe6] text-sm text-slate-500">Loading workspace...</div>;
 }

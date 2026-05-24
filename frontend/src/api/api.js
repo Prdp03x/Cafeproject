@@ -26,6 +26,10 @@ const API = axios.create({
 
 export const signup = (data) => API.post("/auth/signup", data);
 export const login = (data) => API.post("/auth/login", data);
+export const forgotPassword = (data) => API.post("/auth/forgot-password", data);
+export const verifySecret = (data) => API.post("/auth/verify-secret", data);
+export const resetPassword = (data) => API.post("/auth/reset-password", data);
+export const updateSecurityQuestion = (data) => API.put("/auth/security-question", data);
 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");

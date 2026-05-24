@@ -138,6 +138,27 @@ const cafeSchema = new mongoose.Schema(
       type: String,
       default: "admin",
     },
+
+    resetToken: {
+      type: String,
+      default: null,
+    },
+
+    resetTokenExpiry: {
+      type: Date,
+      default: null,
+    },
+
+    secretQuestion: {
+      type: String,
+      default: "",
+    },
+
+    secretAnswer: {
+      type: String,
+      default: "",
+    },
+
   },
   {
     timestamps: true,

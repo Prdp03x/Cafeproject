@@ -5,7 +5,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const auth = require("../middleware/auth");
-const { loginLimiter, passwordChangeLimiter } = require("../middleware/rateLimiters");
+const {
+  loginLimiter,
+  passwordChangeLimiter,
+} = require("../middleware/rateLimiters");
 
 const GST_NUMBER_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,7 +31,10 @@ const BUSINESS_FIELDS = [
   "postalCode",
   "country",
 ];
-const ALLOWED_SETTINGS_FIELDS = new Set([...BRANDING_FIELDS, ...BUSINESS_FIELDS]);
+const ALLOWED_SETTINGS_FIELDS = new Set([
+  ...BRANDING_FIELDS,
+  ...BUSINESS_FIELDS,
+]);
 const REQUIRED_BUSINESS_FIELDS = {
   ownerName: "Owner name",
   phone: "Phone number",
@@ -72,7 +78,8 @@ const getLegacySettingsRepairs = (cafe, updates) => {
 
   if (
     !("totalTables" in updates) &&
-    (!Number.isInteger(Number(cafe.totalTables)) || Number(cafe.totalTables) < 1)
+    (!Number.isInteger(Number(cafe.totalTables)) ||
+      Number(cafe.totalTables) < 1)
   ) {
     repairs.totalTables = DEFAULT_TOTAL_TABLES;
   }
@@ -101,7 +108,10 @@ const validateBusinessProfile = (profile) => {
     return "GST number is invalid";
   }
 
-  if (!Number.isInteger(Number(profile.totalTables)) || Number(profile.totalTables) < 1) {
+  if (
+    !Number.isInteger(Number(profile.totalTables)) ||
+    Number(profile.totalTables) < 1
+  ) {
     return "Total tables must be at least 1";
   }
 
@@ -113,7 +123,11 @@ const validateSettingsPayload = (updates, mergedCafe, validateBusiness) => {
     return "Cafe name is required";
   }
 
-  if ("themeColor" in updates && updates.themeColor && !HEX_COLOR_REGEX.test(updates.themeColor)) {
+  if (
+    "themeColor" in updates &&
+    updates.themeColor &&
+    !HEX_COLOR_REGEX.test(updates.themeColor)
+  ) {
     return "Theme color must be a valid hex color";
   }
 
@@ -131,20 +145,19 @@ const validateSettingsPayload = (updates, mergedCafe, validateBusiness) => {
   return validateBusinessProfile(mergedCafe);
 };
 
-
 const buildAuthResponse = (cafe) => {
   const cafeId = cafe._id.toString();
 
   const token = jwt.sign(
-    { 
+    {
       cafeId,
-      role: "admin"
-     },
+      role: "admin",
+    },
     process.env.JWT_SECRET,
-    { 
+    {
       expiresIn: "7d",
-      issuer: "cafe-saas"
-    }
+      issuer: "cafe-saas",
+    },
   );
 
   return {
@@ -159,11 +172,28 @@ const buildAuthResponse = (cafe) => {
   };
 };
 
-
 // ================== SIGNUP ==================
 router.post("/signup", loginLimiter, async (req, res) => {
   try {
-    const { name, ownerName, email, password } = req.body;
+    const {
+      name,
+      ownerName,
+      email,
+      password,
+      phone,
+      category,
+      logo,
+      legalBusinessName,
+      billingEmail,
+      gstNumber,
+      fssaiNumber,
+      address,
+      city,
+      state,
+      postalCode,
+      country,
+      totalTables,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields required" });
@@ -176,23 +206,48 @@ router.post("/signup", loginLimiter, async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
+    const { secretQuestion, secretAnswer } = req.body;
+
+    if (!secretQuestion || !secretAnswer) {
+      return res
+        .status(400)
+        .json({ error: "Secret question and answer are required" });
+    }
+
+    const hashedAnswer = await bcrypt.hash(
+      secretAnswer.trim().toLowerCase(),
+      10,
+    );
+
     const cafe = new Cafe({
       name,
-      ownerName,
+      ownerName: ownerName || "",
       email,
       password: hashed,
-      isVerified: false, // 🔥 for future email verification
+      phone: phone || "",
+      category: category || "Cafe",
+      logo: logo || "",
+      legalBusinessName: legalBusinessName || "",
+      billingEmail: billingEmail ? billingEmail.trim().toLowerCase() : "",
+      gstNumber: gstNumber ? gstNumber.trim().toUpperCase() : "",
+      fssaiNumber: fssaiNumber || "",
+      address: address || "",
+      city: city || "",
+      state: state || "",
+      postalCode: postalCode || "",
+      country: country || "India",
+      totalTables: totalTables ? Number(totalTables) : 10,
+      secretQuestion,
+      secretAnswer: hashedAnswer,
     });
 
     await cafe.save();
 
     res.json(buildAuthResponse(cafe));
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ================== CURRENT CAFE ==================
 router.get("/me", auth, async (req, res) => {
@@ -223,13 +278,12 @@ router.get("/me", auth, async (req, res) => {
       state: cafe.state,
       postalCode: cafe.postalCode,
       country: cafe.country,
-      googleId: cafe.googleId || null,   // for Google Auth users
+      googleId: cafe.googleId || null, // for Google Auth users
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ================== LOGIN ==================
 router.post("/login", loginLimiter, async (req, res) => {
@@ -243,13 +297,10 @@ router.post("/login", loginLimiter, async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: "Wrong password" });
 
     res.json(buildAuthResponse(cafe));
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 //==================== Setting =====================
 router.get("/settings", auth, async (req, res) => {
@@ -263,14 +314,12 @@ router.get("/settings", auth, async (req, res) => {
     }
 
     res.json(cafe);
-
   } catch (err) {
     res.status(500).json({
       error: err.message,
     });
   }
 });
-
 
 router.put("/settings", auth, async (req, res) => {
   try {
@@ -291,7 +340,7 @@ router.put("/settings", auth, async (req, res) => {
     }
 
     const shouldValidateBusiness = Object.keys(updates).some((key) =>
-      BUSINESS_FIELDS.includes(key)
+      BUSINESS_FIELDS.includes(key),
     );
     const repairs = getLegacySettingsRepairs(cafe, updates);
     const mergedCafe = {
@@ -302,7 +351,7 @@ router.put("/settings", auth, async (req, res) => {
     const validationError = validateSettingsPayload(
       updates,
       mergedCafe,
-      shouldValidateBusiness
+      shouldValidateBusiness,
     );
 
     if (validationError) {
@@ -323,7 +372,7 @@ router.put("/settings", auth, async (req, res) => {
         new: true,
         runValidators: true,
         context: "query",
-      }
+      },
     ).select("-password");
 
     if (!updatedCafe) {
@@ -339,7 +388,6 @@ router.put("/settings", auth, async (req, res) => {
         id: updatedCafe._id.toString(),
       },
     });
-
   } catch (err) {
     res.status(500).json({
       error: err.message,
@@ -347,99 +395,255 @@ router.put("/settings", auth, async (req, res) => {
   }
 });
 
-
 // ================== Change Password Router ==================
-router.put(
-  "/password",
-  auth,
-  passwordChangeLimiter,
-  async (req, res) => {
-    try {
-      const { currentPassword, newPassword, confirmPassword } = req.body;
+router.put("/password", auth, passwordChangeLimiter, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
 
-      // Validation
-      if (!currentPassword || !newPassword || !confirmPassword) {
-        return res.status(400).json({
-          error: "All fields are required",
-        });
-      }
-
-      // Confirm password check
-      if (newPassword !== confirmPassword) {
-        return res.status(400).json({
-          error: "Passwords do not match",
-        });
-      }
-
-      // Password length
-      if (newPassword.length < 6) {
-        return res.status(400).json({
-          error: "Password must be at least 6 characters",
-        });
-      }
-
-      // Find logged-in cafe
-      const cafe = await Cafe.findById(req.cafeId);
-
-      if (!cafe) {
-        return res.status(404).json({
-          error: "Cafe not found",
-        });
-      }
-
-      // Verify current password
-      const isMatch = await bcrypt.compare(
-        currentPassword,
-        cafe.password
-      );
-
-      if (!isMatch) {
-        return res.status(400).json({
-          error: "Current password is incorrect",
-        });
-      }
-
-      // Prevent same password reuse
-      const samePassword = await bcrypt.compare(
-        newPassword,
-        cafe.password
-      );
-
-      if (samePassword) {
-        return res.status(400).json({
-          error: "New password must be different",
-        });
-      }
-
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      // Save
-      cafe.password = hashedPassword;
-
-      await cafe.save();
-
-      res.json({
-        message: "Password changed successfully",
-      });
-
-    } catch (err) {
-      res.status(500).json({
-        error: err.message,
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        error: "All fields are required",
       });
     }
+
+    // Confirm password check
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        error: "Passwords do not match",
+      });
+    }
+
+    // Password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: "Password must be at least 6 characters",
+      });
+    }
+
+    // Find logged-in cafe
+    const cafe = await Cafe.findById(req.cafeId);
+
+    if (!cafe) {
+      return res.status(404).json({
+        error: "Cafe not found",
+      });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, cafe.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        error: "Current password is incorrect",
+      });
+    }
+
+    // Prevent same password reuse
+    const samePassword = await bcrypt.compare(newPassword, cafe.password);
+
+    if (samePassword) {
+      return res.status(400).json({
+        error: "New password must be different",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Save
+    cafe.password = hashedPassword;
+
+    await cafe.save();
+
+    res.json({
+      message: "Password changed successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
   }
-);
+});
+
+//_____________________ SECURITY QUESTION ROUTES ________________//
+
+router.put("/security-question", auth, async (req, res) => {
+  try {
+    const { currentPassword, secretQuestion, secretAnswer } = req.body;
+
+    if (!currentPassword || !secretQuestion || !secretAnswer) {
+      return res.status(400).json({
+        error: "All fields are required",
+      });
+    }
+
+    const cafe = await Cafe.findById(req.cafeId);
+
+    if (!cafe) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, cafe.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        error: "Current password is incorrect",
+      });
+    }
+
+    const hashedAnswer = await bcrypt.hash(
+      secretAnswer.trim().toLowerCase(),
+      10,
+    );
+
+    cafe.secretQuestion = secretQuestion;
+    cafe.secretAnswer = hashedAnswer;
+
+    await cafe.save();
+
+    res.json({
+      message: "Security question updated successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
+
+// ================== FORGOT PASSWORD — step 1: return secret question ==================
+router.post("/forgot-password", loginLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const cafe = await Cafe.findOne({ email: email.trim().toLowerCase() });
+
+    // Always respond same shape to prevent email enumeration
+    if (!cafe) {
+      return res
+        .status(404)
+        .json({ error: "No account found with that email" });
+    }
+
+    if (!cafe.secretQuestion || !cafe.secretAnswer) {
+      return res.status(400).json({
+        error: "Password recovery is not configured for this account yet.",
+        recoverySetupRequired: true,
+      });
+    }
+
+    if (cafe.googleId && !cafe.password) {
+      return res
+        .status(400)
+        .json({
+          error: "This account uses Google Sign-In. Please log in with Google.",
+        });
+    }
+
+    res.json({ secretQuestion: cafe.secretQuestion });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ================== FORGOT PASSWORD — step 2: verify answer, return reset token ==================
+router.post("/verify-secret", loginLimiter, async (req, res) => {
+  try {
+    const { email, secretAnswer } = req.body;
+
+    if (!email || !secretAnswer) {
+      return res.status(400).json({ error: "Email and answer are required" });
+    }
+
+    const cafe = await Cafe.findOne({ email: email.trim().toLowerCase() });
+
+    if (!cafe) {
+      return res.status(400).json({ error: "Incorrect answer" });
+    }
+
+    const isMatch = await bcrypt.compare(
+      secretAnswer.trim().toLowerCase(),
+      cafe.secretAnswer,
+    );
+
+    if (!isMatch) {
+      return res.status(400).json({ error: "Incorrect answer" });
+    }
+
+    const crypto = require("crypto");
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    cafe.resetToken = rawToken;
+    cafe.resetTokenExpiry = tokenExpiry;
+    await cafe.save();
+
+    res.json({ resetToken: rawToken });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ================== RESET PASSWORD ==================
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ error: "Passwords do not match" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters" });
+    }
+
+    const cafe = await Cafe.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() },
+    });
+
+    if (!cafe) {
+      return res.status(400).json({ error: "Invalid or expired reset token" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    cafe.password = hashed;
+    cafe.resetToken = null;
+    cafe.resetTokenExpiry = null;
+    await cafe.save();
+
+    res.json({ message: "Password reset successfully. You can now log in." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ================== GOOGLE LOGIN ==================
 
 // Step 1: Redirect
-router.get("/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
 // Step 2: Callback → RETURN JWT (🔥 IMPORTANT CHANGE)
-router.get("/google/callback",
+router.get(
+  "/google/callback",
   passport.authenticate("google", { session: false }), // ❌ no session
   async (req, res) => {
     try {
@@ -449,11 +653,10 @@ router.get("/google/callback",
 
       // 🔥 Redirect with token
       res.redirect(`${process.env.CLIENT_URL2}/google-success?token=${token}`);
-
     } catch (err) {
       res.redirect("http://localhost:5173/login");
     }
-  }
+  },
 );
 
 module.exports = router;
