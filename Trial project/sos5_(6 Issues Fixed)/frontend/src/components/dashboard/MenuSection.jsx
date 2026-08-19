@@ -1,0 +1,288 @@
+import { useEffect, useState } from "react";
+import API from "../../api/api";
+import AddItemModal from "../menu/AddItemModal";
+import { toast } from "react-toastify";
+
+const formatCurrency = (value) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+
+const getErrorMessage = (error) =>
+  error?.response?.data?.error || error?.message || "Failed to fetch menu";
+
+const MenuSection = () => {
+  const [menu, setMenu] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+
+  const fetchMenu = async () => {
+    try {
+      const res = await API.get("/menu/manage");
+      setMenu(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Dashboard menu fetch failed", error);
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMenu = async () => {
+      try {
+        const res = await API.get("/menu/manage");
+
+        if (!isMounted) {
+          return;
+        }
+
+        setMenu(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error("Dashboard menu fetch failed", error);
+        toast.error(getErrorMessage(error));
+      }
+    };
+
+    void loadMenu();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const groupedMenu = menu.reduce((groups, item) => {
+    const category = item.category || "Uncategorized";
+
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+
+    groups[category].push(item);
+    return groups;
+  }, {});
+
+  const categories = Object.entries(groupedMenu).sort(
+    ([firstCategory], [secondCategory]) =>
+      firstCategory.localeCompare(secondCategory),
+  );
+  const averagePrice = menu.length
+    ? Math.round(
+        menu.reduce((sum, item) => sum + (item.price || 0), 0) / menu.length,
+      )
+    : 0;
+  const configurableItems = menu.filter((item) => item.options?.length).length;
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)]">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Menu workspace
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+              Keep the menu clean, balanced, and easy to scan.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              Organize items by category, maintain pricing clarity, and edit any
+              product from a single management surface.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setEditingItem(null);
+              setShowModal(true);
+            }}
+            className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Add new item
+          </button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Total items
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-slate-950">
+              {menu.length}
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Categories
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-slate-950">
+              {categories.length}
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Average price
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-slate-950">
+              {formatCurrency(averagePrice)}
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Configurable
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-slate-950">
+              {configurableItems}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {menu.length === 0 ? (
+        <section className="rounded-[32px] border border-dashed border-stone-300 bg-white/75 px-6 py-20 text-center shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-stone-100 text-xl font-semibold text-slate-700">
+            M
+          </div>
+          <h3 className="mt-5 text-xl font-semibold text-slate-900">
+            Your menu is still empty
+          </h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+            Add your first item to start building a structured menu with
+            categories, pricing, and optional customizations.
+          </p>
+        </section>
+      ) : (
+        categories.map(([category, items]) => (
+          <section
+            key={category}
+            className="rounded-[32px] border border-white/70 bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.07)] md:p-6"
+          >
+            <div className="mb-5 flex flex-col gap-3">
+              {/* First div */}
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                  Category
+                </p>
+              </div>
+
+              {/* Second div */}
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-2xl font-semibold tracking-tight text-slate-950">
+                  {category}
+                </h3>
+
+                <span className="w-fit rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+                  {items.length} item{items.length === 1 ? "" : "s"}
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {items.map((item) => (
+                <button
+                  key={item._id}
+                  type="button"
+                  onClick={() => {
+                    setEditingItem(item);
+                    setShowModal(true);
+                  }}
+                  className="group w-full overflow-hidden rounded-[22px] border border-stone-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_18px_44px_rgba(15,23,42,0.07)] active:scale-[0.98] flex items-center gap-3 p-2.5 md:flex-col md:items-stretch md:gap-0 md:p-0"
+                >
+                  {/* Thumbnail */}
+                  <div className="h-12.5 w-12.5 shrink-0 overflow-hidden rounded-[10px] border border-stone-200 bg-stone-100 md:h-auto md:w-auto md:shrink-0 md:rounded-none md:border-0 md:aspect-[16/10]">
+                    <img
+                      src={item.image || "https://via.placeholder.com/300"}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  </div>
+
+                  {/* Price badge — desktop only */}
+                  <div className="hidden md:block relative">
+                    <span className="absolute right-2.5 -top-8 rounded-full bg-white/92 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm">
+                      {formatCurrency(item.price)}
+                    </span>
+                  </div>
+
+                  {/* Details */}
+                  <div className="min-w-0 w-full flex flex-1 flex-col gap-2 md:flex-none md:gap-3 md:p-3.5">
+                    {/* Name + price row */}
+                    <div className="min-w-0 w-full flex items-baseline justify-between gap-2 md:block">
+                      {/* mobile: single truncated line */}
+                      <p className="truncate text-sm font-semibold text-slate-900 md:hidden">
+                        {item.name}
+                      </p>
+                      {/* desktop: two-line clamp — overflow-hidden on wrapper constrains width */}
+                      <div className="hidden md:block overflow-hidden">
+                        <p className="line-clamp-2 text-base font-semibold text-slate-900">
+                          {item.name}
+                        </p>
+                      </div>
+                      {/* price — mobile only */}
+                      <span className="shrink-0 text-sm font-semibold text-slate-900 md:hidden">
+                        {formatCurrency(item.price)}
+                      </span>
+                    </div>
+
+                    {/* Description — desktop only, overflow-hidden wrapper constrains width */}
+                    <div className="hidden md:block overflow-hidden">
+                      <p className="line-clamp-2 text-xs leading-5 text-slate-500">
+                        {item.description || "No description added yet."}
+                      </p>
+                    </div>
+
+                    {/* Pills */}
+                    <div className="flex flex-wrap gap-1.5 md:gap-2">
+                      <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-medium text-slate-500 md:bg-white">
+                        {item.category || "Uncategorized"}
+                      </span>
+                      <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-medium text-slate-500 md:bg-white">
+                        {item.options?.length || 0} option group
+                        {item.options?.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Chevron — mobile only */}
+                  <svg
+                    className="h-4 w-4 shrink-0 text-slate-300 md:hidden"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+
+      {showModal && (
+        <AddItemModal
+          onClose={() => {
+            setShowModal(false);
+            setEditingItem(null);
+          }}
+          refresh={fetchMenu}
+          editItem={editingItem}
+        />
+      )}
+    </div>
+  );
+};
+
+export default MenuSection;

@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CafeOS Admin — Master Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
+:root{
+  --bg:#F8FAFC; --surface:#FFFFFF; --surface-2:#F1F5F9; --surface-3:#E9EFF6;
+  --text:#0F172A; --text-2:#64748B; --text-3:#94A3B8;
+  --border:#E2E8F0; --border-2:#CBD5E1;
+  --primary:#2563EB; --primary-2:#1D4ED8; --primary-soft:#EFF6FF; --primary-ring:rgba(37,99,235,.18);
+  --success:#16A34A; --success-soft:#F0FDF4;
+  --warning:#D97706; --warning-soft:#FFFBEB;
+  --danger:#DC2626;  --danger-soft:#FEF2F2;
+  --info:#0284C7;    --info-soft:#F0F9FF;
+  --violet:#7C3AED;  --violet-soft:#F5F3FF;
+  --slate:#475569;   --slate-soft:#F1F5F9;
+  --sb:#0B1526; --sb-2:#0E1B30; --sb-text:#8FA3BF; --sb-text-dim:#5B6C88;
+  --r:12px; --r-sm:8px; --r-lg:16px;
+  --sh-sm:0 1px 2px rgba(15,23,42,.05);
+  --sh-md:0 4px 14px -4px rgba(15,23,42,.10);
+  --sh-lg:0 18px 44px -14px rgba(15,23,42,.22);
+  --ui:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+[data-theme="dark"]{
+  --bg:#0A1120; --surface:#101A2E; --surface-2:#16223A; --surface-3:#1C2A45;
+  --text:#E6EDF7; --text-2:#93A4BC; --text-3:#64748B;
+  --border:#1F2D47; --border-2:#2B3B5A;
+  --primary-soft:rgba(37,99,235,.14); --success-soft:rgba(22,163,74,.14);
+  --warning-soft:rgba(217,119,6,.14); --danger-soft:rgba(220,38,38,.14);
+  --info-soft:rgba(2,132,199,.14); --violet-soft:rgba(124,58,237,.16); --slate-soft:#1C2A45;
+  --sh-sm:0 1px 2px rgba(0,0,0,.4); --sh-md:0 4px 14px -4px rgba(0,0,0,.5); --sh-lg:0 18px 44px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--ui);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(600px 300px at 12% -5%,rgba(37,99,235,.07),transparent 60%),
+             radial-gradient(700px 340px at 95% -10%,rgba(2,132,199,.05),transparent 60%);}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);background-size:26px 26px;
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.5),transparent 480px);}
+[data-theme="dark"] body::after{opacity:.15}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:13.5px;color:var(--text)}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:8px;border:2px solid var(--bg)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--text-2)} .faint{color:var(--text-3)}
+.eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}}
+
+/* ============================================================
+   2. APP SHELL — SIDEBAR / TOPBAR
+   ============================================================ */
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.sidebar{width:264px;position:fixed;inset:0 auto 0 0;z-index:70;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--sb-2),var(--sb));color:var(--sb-text);
+  transition:width .22s ease,transform .25s ease;overflow:hidden}
+.sb-brand{display:flex;align-items:center;gap:11px;padding:18px 18px 14px;flex:0 0 auto}
+.sb-logo{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(135deg,#2563EB,#0EA5E9);box-shadow:0 6px 16px -6px rgba(37,99,235,.7)}
+.sb-logo svg{width:19px;height:19px}
+.sb-name{font-weight:800;font-size:15.5px;color:#F1F5F9;letter-spacing:-.02em;white-space:nowrap}
+.sb-name small{display:block;font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--sb-text-dim);text-transform:uppercase}
+.sb-env{margin:0 16px 10px;padding:5px 10px;border-radius:8px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.28);
+  font-family:var(--mono);font-size:10.5px;color:#93C5FD;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.sb-env .pulse{width:7px;height:7px;border-radius:50%;background:#34D399;flex:0 0 7px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}50%{box-shadow:0 0 0 5px rgba(52,211,153,0)}}
+.sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 12px 12px}
+.sb-nav::-webkit-scrollbar{width:5px}.sb-nav::-webkit-scrollbar-thumb{background:#233350;border:0}
+.sb-group{margin-top:14px}
+.sb-glabel{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sb-text-dim);padding:0 10px 6px;white-space:nowrap}
+.sb-item{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--sb-text);
+  margin:1px 0;position:relative;white-space:nowrap;transition:background .15s,color .15s;border:1px solid transparent}
+.sb-item svg{width:17px;height:17px;flex:0 0 17px;opacity:.85}
+.sb-item:hover{background:rgba(148,163,184,.09);color:#E2E8F0}
+.sb-item.active{background:rgba(37,99,235,.16);color:#fff;border-color:rgba(37,99,235,.35)}
+.sb-item.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:3px;background:#3B82F6}
+.sb-badge{margin-left:auto;font-family:var(--mono);font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:20px;background:rgba(148,163,184,.16);color:#CBD5E1}
+.sb-badge.warn{background:rgba(245,158,11,.18);color:#FBBF24}
+.sb-badge.danger{background:rgba(220,38,38,.22);color:#FCA5A5}
+.sb-foot{flex:0 0 auto;border-top:1px solid rgba(148,163,184,.12);padding:10px 12px}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.sb-user:hover{background:rgba(148,163,184,.09)}
+.sb-user .av{width:34px;height:34px;flex:0 0 34px}
+.sb-uname{font-size:13px;font-weight:600;color:#E2E8F0}
+.sb-urole{font-size:11px;color:var(--sb-text-dim)}
+.sb-footrow{display:flex;gap:4px;margin-top:6px}
+.sb-fbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--sb-text-dim);font-size:11px;font-weight:600;transition:.15s}
+.sb-fbtn:hover{background:rgba(148,163,184,.1);color:#E2E8F0}
+.sb-fbtn svg{width:15px;height:15px}
+.sb-collapse{position:absolute;top:22px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--surface);border:1px solid var(--border);
+  display:grid;place-items:center;box-shadow:var(--sh-md);z-index:80;color:var(--text-2);transition:.2s}
+.sb-collapse:hover{color:var(--primary);border-color:var(--primary)}
+.sb-collapse svg{width:14px;height:14px;transition:transform .25s}
+body.sb-collapsed .sidebar{width:78px}
+body.sb-collapsed .sb-collapse svg{transform:rotate(180deg)}
+body.sb-collapsed .sb-name,body.sb-collapsed .sb-glabel,body.sb-collapsed .sb-item span.lbl,body.sb-collapsed .sb-badge,
+body.sb-collapsed .sb-user div,body.sb-collapsed .sb-fbtn span,body.sb-collapsed .sb-env span{display:none}
+body.sb-collapsed .sb-item{justify-content:center;padding:10px}
+body.sb-collapsed .sb-user{justify-content:center}
+body.sb-collapsed .sb-env{justify-content:center;padding:5px}
+body.sb-collapsed .sb-item:hover::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);
+  background:var(--text);color:var(--surface);font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:7px;white-space:nowrap;z-index:99;box-shadow:var(--sh-md)}
+.main{flex:1;margin-left:264px;min-width:0;transition:margin .22s ease;display:flex;flex-direction:column;min-height:100vh}
+body.sb-collapsed .main{margin-left:78px}
+.backdrop{position:fixed;inset:0;background:rgba(8,15,30,.5);backdrop-filter:blur(2px);z-index:65;opacity:0;pointer-events:none;transition:opacity .25s}
+body.sb-open .backdrop{opacity:1;pointer-events:auto}
+
+/* Impersonation banner */
+.imp-banner{position:sticky;top:0;z-index:90;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  padding:9px 16px;background:repeating-linear-gradient(-45deg,#7C2D12,#7C2D12 14px,#92400E 14px,#92400E 28px);color:#FDE68A;
+  font-size:13px;font-weight:600;border-bottom:1px solid #B45309}
+.imp-banner .btn{background:#FEF3C7;color:#78350F;border:0}
+.imp-banner svg{width:16px;height:16px}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:0 24px;height:62px;
+  background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.tb-burger{display:none}
+.tb-title h1{font-size:16.5px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.crumbs{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-3)}
+.crumbs a:hover{color:var(--primary)}
+.crumbs svg{width:12px;height:12px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.search-btn{display:flex;align-items:center;gap:9px;min-width:250px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text-3);font-size:13px;transition:.15s;box-shadow:var(--sh-sm)}
+.search-btn:hover{border-color:var(--primary);color:var(--text-2);box-shadow:0 0 0 3px var(--primary-ring)}
+.search-btn svg{width:15px;height:15px}
+.search-btn kbd{margin-left:auto;font-family:var(--mono);font-size:10.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--text-3)}
+.icon-btn{position:relative;width:37px;height:37px;border-radius:9px;border:1px solid var(--border);background:var(--surface);
+  display:grid;place-items:center;color:var(--text-2);transition:.15s;box-shadow:var(--sh-sm)}
+.icon-btn:hover{color:var(--primary);border-color:var(--primary);transform:translateY(-1px);box-shadow:0 0 0 3px var(--primary-ring)}
+.icon-btn svg{width:17px;height:17px}
+.n-dot{position:absolute;top:6px;right:7px;min-width:15px;height:15px;border-radius:8px;background:var(--danger);color:#fff;
+  font-size:9.5px;font-weight:700;font-family:var(--mono);display:grid;place-items:center;padding:0 3px;border:2px solid var(--surface)}
+
+/* Dropdowns */
+.dd{position:relative}
+.menu{position:absolute;top:calc(100% + 8px);right:0;min-width:230px;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  box-shadow:var(--sh-lg);padding:6px;z-index:95;opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:.16s}
+.menu.open{opacity:1;transform:none;pointer-events:auto}
+.menu.left{right:auto;left:0}
+.mi{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:8px;border:0;background:none;text-align:left;
+  font-size:13px;font-weight:500;color:var(--text);transition:.12s}
+.mi:hover{background:var(--surface-2)}
+.mi.danger{color:var(--danger)} .mi.danger:hover{background:var(--danger-soft)}
+.mi svg{width:15.5px;height:15.5px;color:var(--text-2)} .mi.danger svg{color:var(--danger)}
+.mi small{margin-left:auto;color:var(--text-3);font-size:11px}
+.menu-hd{padding:8px 10px 6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.menu hr{border:0;border-top:1px solid var(--border);margin:5px 4px}
+.notif-panel{width:360px;padding:0;overflow:hidden}
+.notif-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--border)}
+.notif-head b{font-size:13.5px}
+.notif-list{max-height:380px;overflow:auto}
+.notif-item{display:flex;gap:11px;padding:12px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:.12s}
+.notif-item:hover{background:var(--surface-2)}
+.notif-item.unread{background:var(--primary-soft)}
+.notif-item .n-ic{width:32px;height:32px;flex:0 0 32px;border-radius:9px;display:grid;place-items:center}
+.notif-item .n-ic svg{width:16px;height:16px}
+.notif-item p{font-size:12.8px;font-weight:500}
+.notif-item time{font-size:11px;color:var(--text-3)}
+.notif-foot{padding:10px;text-align:center}
+.prof-card{display:flex;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--border);margin-bottom:5px}
+
+/* ============================================================
+   3. CONTENT / VIEWS
+   ============================================================ */
+.view{flex:1;padding:24px;max-width:1440px;width:100%;margin:0 auto}
+.view-enter{animation:viewIn .35s ease both}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.page-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.page-hd h2{font-size:21px;font-weight:800;letter-spacing:-.025em}
+.page-hd .sub{font-size:13px;color:var(--text-2);margin-top:3px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gap-lg{gap:16px}
+.mt{margin-top:16px}.mt-lg{margin-top:24px}.mb{margin-bottom:16px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);transition:box-shadow .2s,border-color .2s}
+.card:hover{box-shadow:var(--sh-md)}
+.card-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.card-hd h3{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.card-hd .hint{font-size:12px;color:var(--text-3)}
+.card-bd{padding:18px}
+.card-bd.tight{padding:0}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.g-2-1{grid-template-columns:2fr 1fr}.g-1-2{grid-template-columns:1fr 2fr}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:14px}
+.kpi{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 16px 13px;
+  box-shadow:var(--sh-sm);overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--sh-md);border-color:var(--border-2)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.kpi-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center}
+.kpi-ic svg{width:18px;height:18px}
+.kpi-val{font-family:var(--mono);font-size:25px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.kpi-lbl{font-size:12.5px;font-weight:600;color:var(--text-2);margin-top:3px}
+.kpi-foot{display:flex;align-items:center;gap:8px;margin-top:9px}
+.delta{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px}
+.delta svg{width:12px;height:12px}
+.delta.up{color:var(--success);background:var(--success-soft)}
+.delta.down{color:var(--danger);background:var(--danger-soft)}
+.delta.flat{color:var(--text-2);background:var(--surface-2)}
+.kpi-vs{font-size:11px;color:var(--text-3)}
+.kpi .spark{position:absolute;right:14px;bottom:12px;opacity:.9}
+
+/* Badges & chips */
+.bdg{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.bdg::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.bdg.nodot::before{display:none}
+.b-g{color:var(--success);background:var(--success-soft)}
+.b-r{color:var(--danger);background:var(--danger-soft)}
+.b-a{color:var(--warning);background:var(--warning-soft)}
+.b-b{color:var(--primary);background:var(--primary-soft)}
+.b-v{color:var(--violet);background:var(--violet-soft)}
+.b-s{color:var(--slate);background:var(--slate-soft)}
+.b-i{color:var(--info);background:var(--info-soft)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:600;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.chip svg{width:12px;height:12px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8.5px 15px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-size:13px;font-weight:600;transition:.15s;box-shadow:var(--sh-sm);white-space:nowrap}
+.btn svg{width:15px;height:15px}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--sh-md);border-color:var(--border-2)}
+.btn:active{transform:none}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 4px 12px -4px rgba(37,99,235,.5)}
+.btn.primary:hover{background:var(--primary-2)}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff;box-shadow:0 4px 12px -4px rgba(220,38,38,.45)}
+.btn.soft{background:var(--surface-2);border-color:transparent;box-shadow:none}
+.btn.soft:hover{background:var(--surface-3)}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--text-2)}
+.btn.ghost:hover{background:var(--surface-2);color:var(--text)}
+.btn.sm{padding:5.5px 11px;font-size:12px;border-radius:7px}
+.btn.sm svg{width:13px;height:13px}
+.btn.iconb{padding:7px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none}
+.btn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Forms */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.lbl{font-size:12.5px;font-weight:600;color:var(--text-2)}
+.lbl .req{color:var(--danger)}
+.inp,.sel,.txt{width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);transition:.15s;font-size:13.5px}
+.inp:focus,.sel:focus,.txt:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.inp.err,.sel.err{border-color:var(--danger);box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+.txt{min-height:88px;resize:vertical}
+.ferr{font-size:11.5px;color:var(--danger);display:none}
+.field.invalid .ferr{display:block}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.inp-wrap{position:relative}
+.inp-wrap .inp{padding-right:38px}
+.inp-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--text-3);padding:6px;border-radius:6px}
+.inp-eye:hover{color:var(--text)}
+.inp-eye svg{width:16px;height:16px}
+.hint{font-size:11.5px;color:var(--text-3)}
+/* switch */
+.sw{position:relative;display:inline-block;width:38px;height:22px;flex:0 0 38px}
+.sw input{opacity:0;width:0;height:0}
+.sw i{position:absolute;inset:0;border-radius:20px;background:var(--border-2);transition:.2s;cursor:pointer}
+.sw i::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;box-shadow:var(--sh-sm)}
+.sw input:checked + i{background:var(--primary)}
+.sw input:checked + i::after{left:19px}
+.sw input:disabled + i{opacity:.5;cursor:not-allowed}
+
+/* ============================================================
+   4. TABLES
+   ============================================================ */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+.toolbar .inp{width:auto;min-width:210px}
+.toolbar .sel{width:auto}
+.toolbar .spacer{flex:1}
+.table-scroll{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;min-width:880px}
+.tbl th{font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--text-3);text-align:left;
+  padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);user-select:none}
+.tbl th.sortable{cursor:pointer}
+.tbl th.sortable:hover{color:var(--primary)}
+.tbl th .arr{font-family:var(--mono);font-size:10px}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;white-space:nowrap}
+.tbl tbody tr{transition:background .12s}
+.tbl tbody tr:hover{background:var(--surface-2)}
+.tbl tbody tr.sel{background:var(--primary-soft)}
+.tbl tbody tr.click{cursor:pointer}
+.tbl tr.hl-warn{background:var(--warning-soft)}
+.tbl .cbx{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
+.cell-main{font-weight:600}
+.cell-sub{font-size:11.5px;color:var(--text-3)}
+.tbl-foot{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;font-size:12.5px;color:var(--text-2)}
+.bulkbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:var(--primary-soft);border-bottom:1px solid var(--border)}
+.bulkbar b{font-size:12.5px;color:var(--primary)}
+.av{width:32px;height:32px;border-radius:9px;display:inline-grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 32px}
+.av-lg{width:52px;height:52px;border-radius:14px;font-size:18px}
+.cell-id{font-family:var(--mono);font-size:12px;color:var(--text-2)}
+
+/* Progress */
+.pbar{height:7px;border-radius:6px;background:var(--surface-2);overflow:hidden;min-width:90px}
+.pfill{height:100%;border-radius:6px;background:var(--primary);transition:width 1s cubic-bezier(.2,.7,.2,1)}
+.pfill.ok{background:var(--success)} .pfill.warn{background:var(--warning)} .pfill.danger{background:var(--danger)}
+.pline{display:flex;align-items:center;gap:12px}
+.pline .mono{font-size:12px}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
+.tab{padding:10px 15px;font-size:13px;font-weight:600;color:var(--text-2);border:0;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:.15s}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* Timeline */
+.tl{position:relative;padding-left:8px}
+.tl-item{position:relative;display:flex;gap:13px;padding:0 0 20px 34px}
+.tl-item::before{content:"";position:absolute;left:13px;top:30px;bottom:-2px;width:2px;background:var(--border)}
+.tl-item:last-child::before{display:none}
+.tl-ic{position:absolute;left:0;top:2px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;z-index:1}
+.tl-ic svg{width:14px;height:14px}
+.tl-item p{font-size:13px;font-weight:500}
+.tl-item time{font-size:11.5px;color:var(--text-3)}
+
+/* Charts */
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--mono);font-size:10.5px;fill:var(--text-3)}
+.chart .grid-l{stroke:var(--border);stroke-dasharray:3 4}
+.chart .ln{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.2s .1s ease forwards}
+.chart .ln-dash{stroke-dasharray:.02 .008;animation:none;opacity:.55}
+@keyframes draw{to{stroke-dashoffset:0}}
+.chart .area{opacity:0;animation:fadeIn .8s .5s forwards}
+@keyframes fadeIn{to{opacity:1}}
+.chart .bar{transform:scaleY(0);transform-origin:bottom;transform-box:fill-box;animation:grow .7s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes grow{to{transform:scaleY(1)}}
+.chart .dot{opacity:0;animation:fadeIn .4s forwards}
+.donut-seg{transition:stroke-dashoffset 1s ease}
+.legend{display:flex;flex-direction:column;gap:9px}
+.lg-row{display:flex;align-items:center;gap:9px;font-size:12.5px}
+.lg-sw{width:11px;height:11px;border-radius:4px;flex:0 0 11px}
+.lg-val{margin-left:auto;font-family:var(--mono);font-weight:600;font-size:12.5px}
+.lg-pct{color:var(--text-3);font-family:var(--mono);font-size:11px;width:44px;text-align:right}
+.segbar{display:flex;height:12px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.segbar > div{transition:width 1s ease}
+
+/* Stepper (wizard) */
+.steps{display:flex;gap:0;margin-bottom:24px;overflow-x:auto}
+.step{flex:1;display:flex;align-items:center;gap:10px;min-width:150px;position:relative;padding-right:14px}
+.step::after{content:"";flex:1;height:2px;background:var(--border);border-radius:2px}
+.step:last-child::after{display:none}
+.step .n{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12.5px;font-weight:700;
+  background:var(--surface-2);color:var(--text-3);border:2px solid var(--border);transition:.3s}
+.step b{font-size:12.5px;color:var(--text-3);font-weight:600;white-space:nowrap}
+.step.on .n{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 0 0 4px var(--primary-ring)}
+.step.on b{color:var(--text)}
+.step.done .n{background:var(--success-soft);border-color:var(--success);color:var(--success)}
+.step.done b{color:var(--text-2)}
+
+/* Plan cards */
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.plan-card{position:relative;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:22px;transition:.2s;box-shadow:var(--sh-sm)}
+.plan-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.plan-card.sel{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.plan-card.pop::before{content:"MOST POPULAR";position:absolute;top:-10px;left:20px;background:var(--primary);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.12em;padding:3px 9px;border-radius:6px}
+.plan-price{font-family:var(--mono);font-size:29px;font-weight:700;letter-spacing:-.03em;margin:10px 0 2px}
+.plan-price small{font-size:13px;color:var(--text-3);font-weight:500}
+.plan-feat{list-style:none;margin:15px 0 18px;display:flex;flex-direction:column;gap:8px}
+.plan-feat li{display:flex;gap:9px;font-size:13px;color:var(--text-2)}
+.plan-feat svg{width:15px;height:15px;color:var(--success);flex:0 0 15px;margin-top:2px}
+.plan-stats{display:flex;gap:0;border-top:1px solid var(--border);margin-top:14px;padding-top:12px}
+.plan-stats div{flex:1;text-align:center}
+.plan-stats div + div{border-left:1px solid var(--border)}
+.plan-stats b{display:block;font-family:var(--mono);font-size:14px}
+.plan-stats span{font-size:10.5px;color:var(--text-3)}
+
+/* Skeleton */
+.sk{position:relative;overflow:hidden;background:var(--surface-2);border-radius:10px}
+.sk::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.4s infinite;transform:translateX(-100%)}
+[data-theme="dark"] .sk::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)}
+@keyframes shimmer{to{transform:translateX(100%)}}
+.sk-grid{display:grid;gap:14px}
+
+/* Empty state */
+.empty{padding:52px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty .e-ic{width:58px;height:58px;border-radius:17px;display:grid;place-items:center;background:var(--surface-2);color:var(--text-3)}
+.empty .e-ic svg{width:26px;height:26px}
+.empty h4{font-size:15px;font-weight:700}
+.empty p{font-size:13px;color:var(--text-2);max-width:380px}
+
+/* Modal */
+.ovl{position:fixed;inset:0;z-index:120;background:rgba(8,15,30,.55);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;animation:fadeIn .18s}
+.dlg{width:100%;max-width:480px;background:var(--surface);border-radius:16px;box-shadow:var(--sh-lg);border:1px solid var(--border);
+  animation:dlgIn .22s cubic-bezier(.2,.9,.3,1.2);max-height:92vh;display:flex;flex-direction:column}
+.dlg.lg{max-width:680px}.dlg.xl{max-width:860px}
+@keyframes dlgIn{from{opacity:0;transform:translateY(14px) scale(.97)}}
+.dlg-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 0}
+.dlg-hd h3{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.dlg-hd .sub{font-size:12.5px;color:var(--text-2);margin-top:2px}
+.dlg-bd{padding:16px 20px;overflow:auto}
+.dlg-ft{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border)}
+.dlg-ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;margin-bottom:12px}
+.dlg-ic svg{width:22px;height:22px}
+
+/* Toast */
+.toasts{position:fixed;bottom:22px;right:22px;z-index:200;display:flex;flex-direction:column;gap:10px}
+.toast{display:flex;align-items:center;gap:11px;min-width:290px;max-width:400px;padding:12px 15px;border-radius:12px;background:var(--surface);
+  border:1px solid var(--border);box-shadow:var(--sh-lg);font-size:13px;font-weight:500;animation:toastIn .28s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}}
+.toast.out{animation:toastOut .25s forwards}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+.toast .t-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 28px}
+.toast .t-ic svg{width:15px;height:15px}
+
+/* Command palette */
+.ck-ovl{position:fixed;inset:0;z-index:150;background:rgba(8,15,30,.5);backdrop-filter:blur(3px);display:flex;justify-content:center;padding:12vh 16px 16px;animation:fadeIn .15s}
+.cmdk{width:100%;max-width:600px;height:fit-content;background:var(--surface);border-radius:16px;border:1px solid var(--border);box-shadow:var(--sh-lg);overflow:hidden;animation:dlgIn .2s}
+.ck-in{display:flex;align-items:center;gap:11px;padding:15px 17px;border-bottom:1px solid var(--border)}
+.ck-in svg{width:18px;height:18px;color:var(--text-3)}
+.ck-in input{flex:1;border:0;background:none;font-size:15px;outline:none;color:var(--text)}
+.ck-in kbd{font-family:var(--mono);font-size:10px;color:var(--text-3);border:1px solid var(--border);border-radius:5px;padding:2px 6px}
+.ck-list{max-height:420px;overflow:auto;padding:8px}
+.ck-group{padding:9px 10px 4px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ck-item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;cursor:pointer;font-size:13px}
+.ck-item .ck-ic{width:30px;height:30px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;color:var(--text-2);flex:0 0 30px}
+.ck-item .ck-ic svg{width:15px;height:15px}
+.ck-item small{margin-left:auto;color:var(--text-3);font-family:var(--mono);font-size:11px}
+.ck-item.sel{background:var(--primary-soft)}
+.ck-item.sel .ck-ic{background:var(--primary);color:#fff}
+.ck-item b{font-weight:600}
+.ck-item .sub2{display:block;font-size:11px;color:var(--text-3);font-weight:400}
+
+/* Misc */
+.info-note{display:flex;gap:12px;padding:13px 16px;border-radius:11px;font-size:12.8px;border:1px solid}
+.info-note svg{width:17px;height:17px;flex:0 0 17px;margin-top:1px}
+.note-info{background:var(--info-soft);border-color:color-mix(in srgb,var(--info) 30%,transparent);color:var(--text)}
+.note-info svg{color:var(--info)}
+.note-warn{background:var(--warning-soft);border-color:color-mix(in srgb,var(--warning) 30%,transparent)}
+.note-warn svg{color:var(--warning)}
+.note-danger{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 30%,transparent)}
+.note-danger svg{color:var(--danger)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:9px 20px;font-size:13px}
+.kv dt{color:var(--text-2);font-weight:500}
+.kv dd{font-weight:600;text-align:right;font-family:var(--mono);font-size:12.5px}
+.split{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px}
+.split:last-child{border:0}
+.divider{border:0;border-top:1px solid var(--border);margin:14px 0}
+/* invoice */
+.inv-doc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px;font-size:13px}
+.inv-doc table{width:100%;border-collapse:collapse;margin-top:16px}
+.inv-doc th{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);text-align:left;padding:8px;border-bottom:1px solid var(--border)}
+.inv-doc td{padding:10px 8px;border-bottom:1px solid var(--border)}
+.stamp{display:inline-block;padding:4px 12px;border:2px solid var(--success);color:var(--success);border-radius:8px;font-weight:800;font-size:12px;letter-spacing:.14em;transform:rotate(-4deg)}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:12px;max-height:340px;overflow:auto;padding:4px}
+.msg{max-width:78%;padding:10px 13px;border-radius:12px;font-size:13px}
+.msg .who{font-size:11px;font-weight:700;margin-bottom:3px;display:flex;gap:8px;align-items:center}
+.msg .who time{color:var(--text-3);font-weight:400;font-family:var(--mono);font-size:10px}
+.msg.admin{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.msg.admin .who{color:rgba(255,255,255,.8)}
+.msg.user{align-self:flex-start;background:var(--surface-2);border-bottom-left-radius:4px}
+/* matrix */
+.matrix td,.matrix th{text-align:center}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+
+/* ============================================================
+   5. RESPONSIVE
+   ============================================================ */
+@media(max-width:1120px){.g-2-1,.g-1-2{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-102%);width:280px}
+  body.sb-open .sidebar{transform:none}
+  .main,body.sb-collapsed .main{margin-left:0}
+  .sb-collapse{display:none}
+  .tb-burger{display:grid}
+  .search-btn{min-width:0}.search-btn span,.search-btn kbd{display:none}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .view{padding:14px}
+  .topbar{padding:0 14px}
+  .tb-title .crumbs{display:none}
+  .fgrid{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi-val{font-size:19px}
+  .step b{display:none}
+  .toolbar .inp{min-width:140px;flex:1}
+}
+@media(max-width:420px){.kpis{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="impBanner" class="imp-banner" hidden>
+  <i data-lucide="eye"></i>
+  <span id="impText"></span>
+  <button class="btn sm" data-action="imp-exit"><i data-lucide="log-out"></i> Exit Impersonation</button>
+</div>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation"></aside>
+  <div class="backdrop" data-action="sb-close"></div>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="ckRoot"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CafeOS Master Admin — modular vanilla JS
+   Sections: utils · mock-data · charts · ui-primitives · table ·
+             layout · views · router · palette/notifications · init
+   (Splits 1:1 into the requested js/ files: app, navigation,
+    modal, notifications, charts, tables, mock-data.)
+   ════════════════════════════════════════════════════════════ */
+
+/* ---------- 1. UTILS ---------- */
+const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const INRF=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const inr=n=>'₹'+INRF.format(Math.round(n));
+const inrL=n=>'₹'+(n/1e5).toFixed(n>=1e6?1:2)+'L';
+const inrCr=n=>'₹'+(n/1e7).toFixed(2)+' Cr';
+const compact=n=>n>=1e7?inrCr(n):n>=1e5?inrL(n):inr(n);
+const fmtDate=d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+const fmtDT=d=>new Date(d).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return d};
+const daysAhead=n=>{const d=new Date();d.setDate(d.getDate()+n);return d};
+function timeAgo(d){const s=(Date.now()-new Date(d))/1e3;if(s<90)return'just now';if(s<3600)return Math.round(s/60)+'m ago';if(s<86400)return Math.round(s/3600)+'h ago';if(s<86400*30)return Math.round(s/86400)+'d ago';return fmtDate(d)}
+const rnd=i=>{const x=Math.sin(i*9301+49297)*233280;return x-Math.floor(x)};
+const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const debounce=(f,t)=>{let x;return(...a)=>{clearTimeout(x);x=setTimeout(()=>f(...a),t)}};
+const icons=()=>window.lucide&&lucide.createIcons();
+function countUp(el){$$('[data-count]',el||document).forEach(e=>{if(e._done)return;e._done=1;const t=parseFloat(e.dataset.count),f=e.dataset.f||'n',d=900,s=performance.now();
+  const fmt=v=>f==='inr'?inr(v):f==='cr'?inrCr(v):f==='l'?inrL(v):INRF.format(Math.round(v));
+  (function step(n){const p=Math.min(1,(n-s)/d),ez=1-Math.pow(1-p,3);e.textContent=fmt(t*ez);if(p<1)requestAnimationFrame(step)})(s)})}
+function exportCSV(name,rows){const csv=rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();toast('Exported '+name,'ok')}
+
+/* ---------- 2. MOCK DATA ---------- */
+const PLANS={
+ starter:{id:'starter',name:'Starter',pm:499,py:4990,trial:14,outlets:1,staff:3,orders:5000,storage:'2 GB',products:150,api:'10k/day',subs:512,rev:512*499,conv:'3.1%',pop:false,
+   feats:['1 outlet','3 staff accounts','5,000 orders / month','150 products','Basic dashboard','Email support']},
+ growth:{id:'growth',name:'Growth',pm:999,py:9990,trial:14,outlets:3,staff:20,orders:20000,storage:'10 GB',products:500,api:'50k/day',subs:405,rev:405*999,conv:'4.6%',pop:true,
+   feats:['3 outlets','20 staff accounts','20,000 orders / month','500 products','Advanced reports','Priority email support']},
+ pro:{id:'pro',name:'Pro',pm:1999,py:19990,trial:14,outlets:-1,staff:100,orders:-1,storage:'50 GB',products:-1,api:'200k/day',subs:91,rev:91*1999,conv:'2.2%',pop:false,
+   feats:['Unlimited outlets','100 staff accounts','Unlimited orders','Unlimited products','Advanced analytics','API access','Priority support']},
+ enterprise:{id:'enterprise',name:'Enterprise',pm:7999,py:79990,trial:30,outlets:-1,staff:-1,orders:-1,storage:'500 GB',products:-1,api:'Unlimited',subs:12,rev:12*7999,conv:'—',pop:false,
+   feats:['Everything in Pro','Dedicated success manager','Custom SLAs','SSO & audit exports','White-label branding']}};
+const PLAN_ORDER=['starter','growth','pro','enterprise'];
+const PLAN_CLR={starter:'#64748B',growth:'#2563EB',pro:'#7C3AED',enterprise:'#0F172A'};
+const STATUS={active:['Active','b-g'],trial:['Trial','b-b'],payment_failed:['Payment Failed','b-r'],suspended:['Suspended','b-s'],
+  expired:['Expired','b-a'],pending_setup:['Pending Setup','b-v'],paid:['Paid','b-g'],failed:['Failed','b-r'],refunded:['Refunded','b-v'],
+  pending:['Pending','b-a'],settled:['Settled','b-g'],processing:['Processing','b-a'],captured:['Captured','b-g'],
+  open:['Open','b-r'],in_progress:['In Progress','b-b'],waiting:['Waiting','b-a'],resolved:['Resolved','b-g'],
+  sent:['Sent','b-g'],scheduled:['Scheduled','b-b'],draft:['Draft','b-s'],low:['Low','b-s'],medium:['Medium','b-b'],high:['High','b-a'],urgent:['Urgent','b-r'],
+  enabled:['Enabled','b-g'],disabled:['Disabled','b-s'],monthly:['Monthly','b-s'],yearly:['Yearly','b-v'],preparing:['Preparing','b-a'],completed:['Completed','b-g'],cancelled:['Cancelled','b-s']};
+const badge=(s,extra='')=>{const m=STATUS[s]||[s,'b-s'];return `<span class="bdg ${m[1]} ${extra}">${m[0]}</span>`};
+const avatar=(name,cls='av')=>{const h=hue(name);const ini=name.split(/\s|&/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  return `<span class="${cls}" style="background:hsl(${h} 75% 91%);color:hsl(${h} 55% 34%)">${ini}</span>`};
+
+const CAFE_RAW=[
+['Brew & Bean','pro','active','Mumbai'],['Kaapi House','growth','active','Bengaluru'],['The Roast Room','pro','active','Delhi NCR'],
+['Chai Point Express','starter','active','Pune'],['Filter Cafe Co.','growth','active','Chennai'],['Bean There','starter','trial','Hyderabad'],
+['Madras Coffee Club','growth','active','Chennai'],['The Waffle Brew','starter','payment_failed','Kolkata'],['Cortado Corner','pro','active','Bengaluru'],
+['Espresso Dept.','growth','active','Mumbai'],['Dosa & Drip','starter','active','Kochi'],['The Daily Grind','growth','trial','Jaipur'],
+['Latte Lane','starter','active','Indore'],['Cold Craft','pro','payment_failed','Delhi NCR'],['Arabica Alley','growth','active','Pune'],
+['Perk Up Cafe','starter','suspended','Ahmedabad'],['The Steam Room','growth','active','Kolkata'],['Mocha Manor','pro','active','Mumbai'],
+['Brew Haven','growth','active','Bengaluru'],['Sip Society','starter','trial','Chandigarh'],['Roast Republic','pro','active','Hyderabad'],
+['Cafe Nirvaan','growth','expired','Pune'],['The Grind House','starter','active','Jaipur'],['Cuppa Culture','growth','suspended','Kochi'],
+['Velvet Bean','pro','pending_setup','Mumbai'],['Northside Brew','starter','pending_setup','Chandigarh']];
+const OWNERS=['Aarav Shah','Priya Nair','Rohan Gupta','Meera Iyer','Kabir Malhotra','Ananya Rao','Vikram Shetty','Divya Menon','Arjun Kapoor','Sneha Kulkarni','Rahul Verma','Isha Patel','Aditya Joshi','Kavya Reddy','Nikhil Bose','Tanvi Desai','Sameer Khan','Ritu Agarwal','Karan Bedi','Pooja Saxena','Manav Gill','Neha Bhatt','Siddharth Rao','Aisha Sheikh','Devansh Parekh','Lakshmi Krishnan'];
+const CAFES=CAFE_RAW.map((r,i)=>{const[name,plan,status,city]=r;const owner=OWNERS[i];
+  const orders=Math.floor(rnd(i+3)*13000)+320, aov=170+Math.round(rnd(i+11)*240);
+  const c={id:'c'+(i+1),name,slug:name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),owner,city,plan,status,
+    email:owner.split(' ')[0].toLowerCase()+'@'+name.toLowerCase().replace(/[^a-z]/g,'').slice(0,10)+'.in',
+    phone:'+91 98'+String(10000000+Math.floor(rnd(i+5)*89999999)).slice(0,8),
+    subId:'sub_'+Math.random().toString(36).slice(2,10).toUpperCase(),
+    cycle:rnd(i+9)>.72?'yearly':'monthly', orders, aov, gmv:orders*aov,
+    created:daysAgo(40+Math.floor(rnd(i+2)*680)), lastActive:new Date(Date.now()-Math.floor(rnd(i+4)*2800+4)*60000),
+    staff:Math.min(PLANS[plan].staff===-1?14:PLANS[plan].staff, 1+Math.floor(rnd(i+6)*(PLANS[plan].staff===-1?40:PLANS[plan].staff))),
+    staffTotal:1+Math.floor(rnd(i+6)*46), products:18+Math.floor(rnd(i+8)*300),
+    storage:(rnd(i+10)*(plan==='pro'?8:4)+.3).toFixed(1),
+    trialDaysLeft:status==='trial'?[2,5,9][i%3]:null,
+    rzpKey:'rzp_live_'+Math.random().toString(36).slice(2,12).toUpperCase()};
+  return c});
+const cafe=id=>CAFES.find(c=>c.id===id);
+
+const TXN_ST=['paid','paid','paid','paid','failed','pending','refunded'];
+const METHODS=['UPI','Card','UPI AutoPay','Netbanking'];
+const TXNS=Array.from({length:42},(_,i)=>{const c=CAFES[(i*7)%CAFES.length],p=PLANS[c.plan];
+  return{id:'TXN-'+(90210-i),cafe:c,inv:'INV-2026-'+String(140-i).padStart(4,'0'),amount:c.cycle==='yearly'?p.py:p.pm,
+  method:METHODS[i%4],payId:'pay_'+Math.random().toString(36).slice(2,12).toUpperCase(),st:TXNS[i%7],date:daysAgo(i%29)}});
+const INVOICES=TXNS.slice(0,22).map((t,i)=>({...t,id:t.inv,period:'1 Jul – 31 Jul 2026',due:daysAhead((i%3)-2),
+  st:t.st==='paid'?'paid':t.st==='failed'?'pending':t.st==='refunded'?'refunded':'paid',plan:t.cafe.plan}));
+const CUST=['Riya S.','Aditya M.','Zoya K.','Kunal P.','Sara D.','Vivaan T.','Nisha R.','Ishaan G.','Aarohi L.','Dhruv B.'];
+const ORD_ST=['completed','completed','completed','preparing','completed','cancelled'];
+const ORDERS=Array.from({length:46},(_,i)=>{const c=CAFES[(i*5)%CAFES.length];
+  return{id:'ORD-'+(92831-i),cafe:c,customer:CUST[i%10],amount:140+Math.floor(rnd(i+20)*1100),
+  pay:rnd(i+30)>.9?'pending':rnd(i+40)>.94?'failed':'captured',st:ORD_ST[i%6],date:new Date(Date.now()-i*47*60000)}});
+const TICKETS=[
+ {id:'TKT-4821',cafe:CAFES[0],subject:'Razorpay webhook failing on subscription renewals',pr:'urgent',st:'open',admin:'Imran Qureshi',created:daysAgo(0),updated:new Date(Date.now()-42*60000)},
+ {id:'TKT-4819',cafe:CAFES[8],subject:'Cannot add 21st staff member on Growth plan',pr:'high',st:'in_progress',admin:'Imran Qureshi',created:daysAgo(1),updated:new Date(Date.now()-3*3600e3)},
+ {id:'TKT-4815',cafe:CAFES[13],subject:'Request yearly invoice PDFs for GST filing',pr:'medium',st:'waiting',admin:'Sara Fernandes',created:daysAgo(2),updated:daysAgo(1)},
+ {id:'TKT-4808',cafe:CAFES[3],subject:'KOT printer prints duplicate copies',pr:'medium',st:'in_progress',admin:'Nandini Rao',created:daysAgo(3),updated:daysAgo(1)},
+ {id:'TKT-4801',cafe:CAFES[18],subject:'Menu images not syncing to customer app',pr:'high',st:'open',admin:'—',created:daysAgo(4),updated:daysAgo(2)},
+ {id:'TKT-4796',cafe:CAFES[6],subject:'Upgrade enquiry: Growth → Pro mid-cycle billing',pr:'low',st:'resolved',admin:'Sara Fernandes',created:daysAgo(6),updated:daysAgo(3)},
+ {id:'TKT-4790',cafe:CAFES[20],subject:'CSV export missing discount column',pr:'low',st:'resolved',admin:'Imran Qureshi',created:daysAgo(8),updated:daysAgo(5)}];
+TICKETS.forEach(t=>t.thread=[
+ {who:t.cafe.owner,role:'owner',t:fmtDT(t.created),msg:'Hi, facing this issue since yesterday. Attaching screenshots — please check urgently.'},
+ {who:t.admin==='—'?'System':t.admin,role:'admin',t:fmtDT(new Date(+t.created+3600e3)),msg:'Thanks for reporting. We are looking into this and will update you shortly.'},
+ {who:t.cafe.owner,role:'owner',t:fmtDT(new Date(+t.updated)),msg:'Any update on this? It is affecting our operations.'}]);
+const ADMINS=[
+ {name:'Arjun Mehta',email:'arjun@cafeos.in',role:'Super Admin',st:'enabled',last:new Date(Date.now()-9*60000),created:daysAgo(810)},
+ {name:'Sara Fernandes',email:'sara@cafeos.in',role:'Finance Admin',st:'enabled',last:new Date(Date.now()-3*3600e3),created:daysAgo(540)},
+ {name:'Imran Qureshi',email:'imran@cafeos.in',role:'Support Admin',st:'enabled',last:new Date(Date.now()-26*3600e3),created:daysAgo(420)},
+ {name:'Nandini Rao',email:'nandini@cafeos.in',role:'Operations Admin',st:'enabled',last:new Date(Date.now()-2*86400e3),created:daysAgo(260)},
+ {name:'Dev Khanna',email:'dev@cafeos.in',role:'Finance Admin',st:'disabled',last:daysAgo(41),created:daysAgo(700)}];
+const ROLE_DESC={'Super Admin':'Full platform access including system settings and admin management.','Finance Admin':'Revenue, subscriptions, transactions, invoices and payouts.','Support Admin':'Cafe management, support tickets and announcements.','Operations Admin':'Cafe onboarding, requests, orders and usage monitoring.'};
+let AUDIT=[
+ ['Super Admin Arjun Mehta changed <b>Brew &amp; Bean</b> subscription from Growth → Pro','subscription','Brew & Bean','14.224.6.81','success'],
+ ['Finance Admin Sara Fernandes marked invoice INV-2026-0128 as paid','billing','Cold Craft','14.224.6.81','success'],
+ ['Super Admin Arjun Mehta suspended <b>Perk Up Cafe</b> — repeated chargebacks','cafe','Perk Up Cafe','103.21.58.4','success'],
+ ['Operations Admin Nandini Rao approved onboarding request for Velvet Bean','onboarding','Velvet Bean','49.36.112.7','success'],
+ ['Super Admin Arjun Mehta logged in as <b>Kaapi House</b> (impersonation)','impersonation','Kaapi House','14.224.6.81','success'],
+ ['Finance Admin Sara Fernandes updated Growth plan price ₹899 → ₹999','plan','—','14.224.6.81','success'],
+ ['Support Admin Imran Qureshi extended trial of Bean There by 7 days','subscription','Bean There','152.58.33.9','success'],
+ ['Super Admin Arjun Mehta created admin user Nandini Rao','admin','—','14.224.6.81','success'],
+ ['Finance Admin Dev Khanna failed login attempt (invalid 2FA code)','auth','—','182.71.9.14','failure'],
+ ['Operations Admin Nandini Rao exported 1,248 cafes to CSV','export','—','49.36.112.7','success'],
+ ['Super Admin Arjun Mehta triggered payout settlement PO-7781','payout','—','14.224.6.81','success'],
+ ['Support Admin Imran Qureshi resolved ticket TKT-4796','support','Madras Coffee Club','152.58.33.9','success'],
+ ['Super Admin Arjun Mehta updated SMTP sender to billing@cafeos.in','settings','—','14.224.6.81','success'],
+ ['Finance Admin Sara Fernandes refunded ₹1,999 to Cold Craft','billing','Cold Craft','14.224.6.81','success'],
+ ['Super Admin Arjun Mehta disabled admin user Dev Khanna','admin','—','14.224.6.81','success'],
+ ['Operations Admin Nandini Rao sent announcement "Scheduled maintenance Aug 24"','announcement','All Cafes','49.36.112.7','success']];
+AUDIT=AUDIT.map((a,i)=>({msg:a[0],type:a[1],cafe:a[2],ip:a[3],res:a[4],admin:a[0].split(' ')[2]+' '+a[0].split(' ')[3],ts:new Date(Date.now()-(i*3.7+1)*3600e3)}));
+const REQUESTS=[
+ {id:'rq1',cafe:'Copper Kettle',owner:'Farhan Ali',email:'farhan@copperkettle.in',plan:'growth',date:daysAgo(0),ver:['GST ✓','Aadhaar ✓']},
+ {id:'rq2',cafe:'Matcha Mori',owner:'Yuki Thomas',email:'yuki@matchamori.in',plan:'pro',date:daysAgo(1),ver:['GST ✓','Aadhaar ✓','FSSAI ✓']},
+ {id:'rq3',cafe:'Bun Mask Co.',owner:'Suresh Patil',email:'suresh@bunmaska.in',plan:'starter',date:daysAgo(1),ver:['Aadhaar ✓']},
+ {id:'rq4',cafe:'Cloud Nine Brews',owner:'Alia D’Souza',email:'alia@cloudnine.in',plan:'growth',date:daysAgo(2),ver:['Docs pending']}];
+const ANNOUNCEMENTS=[
+ {title:'Scheduled maintenance — Sunday, 24 Aug, 2:00–4:00 AM IST',type:'Maintenance',aud:'All Cafes',when:'Sent · Aug 16',st:'sent',body:'Billing and reporting modules will be read-only for up to 20 minutes. Order-taking remains unaffected.'},
+ {title:'New: Razorpay UPI AutoPay for subscriptions',type:'Feature',aud:'All Cafes',when:'Sent · Aug 9',st:'sent',body:'Cafes can now enable UPI AutoPay mandates so renewals never fail on expired cards.'},
+ {title:'GST invoice format updated for FY 26-27',type:'Billing',aud:'Active Cafes',when:'Scheduled · Aug 21, 10:00',st:'scheduled',body:'Invoice line items now show HSN codes and place-of-supply as per the latest notification.'},
+ {title:'Trial extension policy change',type:'Info',aud:'Trial Users',when:'Sent · Jul 30',st:'sent',body:'Trials can be extended once, up to 7 days, via support. Automatic extensions are discontinued.'}];
+let NOTIFS=[
+ {ic:'alert-triangle',cl:'danger',t:'3 subscription payments failed in the last 6 hours',time:'12m ago',read:false,go:'failed-payments'},
+ {ic:'timer',cl:'warning',t:'7 trials ending within the next 3 days',time:'40m ago',read:false,go:'trials'},
+ {ic:'store',cl:'info',t:'4 new cafe registrations awaiting review',time:'1h ago',read:false,go:'requests'},
+ {ic:'check-circle-2',cl:'success',t:'₹1,999 recovered from Cold Craft via retry',time:'2h ago',read:false,go:'failed-payments'},
+ {ic:'life-buoy',cl:'warning',t:'Ticket TKT-4821 marked urgent by Brew & Bean',time:'3h ago',read:true,go:'support'},
+ {ic:'wallet',cl:'success',t:'Payout PO-7781 (₹4.2L) settled to bank',time:'1d ago',read:true,go:'payouts'}];
+const ACTIVITY=[
+ {ic:'trending-up',cl:'b-g',t:'<b>ABC Cafe</b> upgraded from Growth to <b>Pro</b>',c:'Roast Republic · ₹1,999/mo',time:'24m ago'},
+ {ic:'alert-triangle',cl:'b-r',t:'Subscription payment failed for <b>The Waffle Brew</b>',c:'Retry scheduled tomorrow',time:'1h ago'},
+ {ic:'store',cl:'b-b',t:'New cafe registered: <b>Velvet Bean</b>, Mumbai',c:'Pro plan · pending setup',time:'2h ago'},
+ {ic:'check-circle-2',cl:'b-g',t:'<b>Kaapi House</b> completed onboarding',c:'Menu imported · 42 products',time:'4h ago'},
+ {ic:'ban',cl:'b-s',t:'<b>Cuppa Culture</b> suspended by Arjun Mehta',c:'Reason: repeated chargebacks',time:'6h ago'},
+ {ic:'shield',cl:'b-v',t:'New admin user created: <b>Nandini Rao</b>',c:'Operations Admin role',time:'1d ago'},
+ {ic:'wallet',cl:'b-g',t:'Recovered payment of ₹999 from <b>Brew Haven</b>',c:'Auto-retry succeeded',time:'1d ago'},
+ {ic:'megaphone',cl:'b-i',t:'Announcement sent to <b>1,248 cafes</b>',c:'Scheduled maintenance notice',time:'2d ago'}];
+const MRR12=[5.4,5.7,5.9,6.2,6.5,6.6,7.0,7.2,7.5,7.8,8.1,8.42].map(v=>v*1e5);
+const MRR_PREV=MRR12.map((v,i)=>v*(0.86+rnd(i)*0.04));
+const REGS=[62,58,71,66,84,79,92,88,103,97,118,124];
+const MONTHS=['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+const ORD30=Array.from({length:30},(_,i)=>5200+Math.floor(rnd(i+50)*2100)+(i>22?400:0));
+const GMV12=[2.9,3.1,3.0,3.4,3.6,3.8,3.9,4.1,4.3,4.5,4.6,4.82].map(v=>v*1e7);
+const PRODUCTS=[['Filter Coffee (Regular)','Beverages',38,120,12840],['Masala Chai','Beverages',41,60,11920],['Chicken Sandwich','Food',27,180,7410],
+ ['Cold Brew 250ml','Beverages',19,190,6980],['Veg Puff','Snacks',33,45,6720],['Belgian Mocha','Beverages',16,220,5240],['Banana Walnut Cake','Desserts',12,160,4180],['Paneer Wrap','Food',14,170,3890]];
+const PAYOUTS=[['PO-7781',421500,'settled',daysAgo(1)],['PO-7780',388200,'settled',daysAgo(4)],['PO-7779',356900,'settled',daysAgo(8)],['PO-7782',129800,'processing',daysAgo(0)],['PO-7778',401300,'settled',daysAgo(12)]];
+
+/* ---------- 3. CHARTS (hand-rolled SVG) ---------- */
+const CH_W=640;
+function lineSVG({labels,series,h=230,yFmt=v=>v,xEvery=null}){
+  const L=52,R=14,T=16,B=28,W=CH_W,H=h;
+  const all=series.flatMap(s=>s.data);const max=Math.max(...all)*1.12;
+  const n=Math.max(...series.map(s=>s.data.length));
+  const X=i=>L+i*(W-L-R)/Math.max(1,n-1), Y=v=>T+(1-v/max)*(H-T-B);
+  let g='',grid='';
+  for(let k=0;k<=4;k++){const y=T+k*(H-T-B)/4,v=max*(1-k/4);grid+=`<line class="grid-l" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text x="${L-8}" y="${y+4}" text-anchor="end">${yFmt(v)}</text>`}
+  let paths='';
+  series.forEach((s,si)=>{
+    const pts=s.data.map((v,i)=>[X(i),Y(v)]);
+    const d='M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+    if(s.fill&&si===series.length-1)paths+=`<path class="area" d="${d} L${X(s.data.length-1)},${H-B} L${L},${H-B} Z" fill="url(#grad-${s.fill})" stroke="none"/>`;
+    paths+=`<path class="ln ${s.dash?'ln-dash':''}" pathLength="1" d="${d}" stroke="${s.color}" ${s.dash?'stroke-width="2"':''}/>`;
+    if(s.dots!==false)paths+=`<circle class="dot" style="animation-delay:${.9+si*.1}s" cx="${pts[pts.length-1][0]}" cy="${pts[pts.length-1][1]}" r="4" fill="${s.color}"><title>${s.name}: ${yFmt(s.data[s.data.length-1])}</title></circle>`;
+  });
+  let xl='';const step=xEvery||Math.ceil(n/8);
+  labels.forEach((lb,i)=>{if(i%step===0)xl+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${lb}</text>`});
+  const grads=series.filter(s=>s.fill).map(s=>`<linearGradient id="grad-${s.fill}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${s.color}" stop-opacity=".22"/><stop offset="100%" stop-color="${s.color}" stop-opacity="0"/></linearGradient>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"><defs>${grads}</defs>${grid}${xl}${paths}</svg>`}
+function barSVG({labels,data,color='#2563EB',h=230,yFmt=v=>v}){
+  const L=46,R=10,T=14,B=28,W=CH_W,H=h,max=Math.max(...data)*1.15;
+  const Y=v=>T+(1-v/max)*(H-T-B), bw=(W-L-R)/data.length*.56, step=(W-L-R)/data.length;
+  let grid='';for(let k=0;k<=4;k++){const y=T+k*(H-T-B)/4;grid+=`<line class="grid-l" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text x="${L-7}" y="${y+4}" text-anchor="end">${yFmt(max*(1-k/4))}</text>`}
+  const bars=data.map((v,i)=>`<rect class="bar" style="animation-delay:${i*45}ms" x="${L+i*step+(step-bw)/2}" y="${Y(v)}" width="${bw}" height="${H-B-Y(v)}" rx="5" fill="${color}" opacity="${.75+rnd(i)*.25}"><title>${labels[i]}: ${yFmt(v)}</title></rect>`).join('');
+  const xl=labels.map((lb,i)=>i%Math.ceil(labels.length/8)===0?`<text x="${L+i*step+step/2}" y="${H-8}" text-anchor="middle">${lb}</text>`:'').join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">${grid}${bars}${xl}</svg>`}
+function donutSVG({items,size=180,thickness=22,centerTop,centerSub}){
+  const total=items.reduce((a,b)=>a+b.value,0),r=(size-thickness)/2,C=2*Math.PI*r;let off=0,segs='';
+  items.forEach(it=>{const frac=it.value/total;
+    segs+=`<circle class="donut-seg" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${it.color}" stroke-width="${thickness}"
+      stroke-dasharray="${(frac*C-2).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-off*C).toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"><title>${it.label}: ${INRF.format(it.value)}</title></circle>`;off+=frac});
+  return `<svg class="chart" viewBox="0 0 ${size} ${size}" style="max-width:${size}px;margin:auto">${segs}
+    <text x="50%" y="47%" text-anchor="middle" style="font-size:19px;font-weight:700;fill:var(--text);font-family:var(--mono)">${centerTop}</text>
+    <text x="50%" y="60%" text-anchor="middle">${centerSub}</text></svg>`}
+const sparkSVG=(data,color,w=96,h=30)=>{const max=Math.max(...data),min=Math.min(...data);
+  const pts=data.map((v,i)=>[(i/(data.length-1))*w,h-2-((v-min)/(max-min||1))*(h-5)]);
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polygon points="${pts.map(p=>p.join(',')).join(' ')} ${w},${h} 0,${h}" fill="${color}" opacity=".12"/><polyline points="${pts.map(p=>p.map(x=>x.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/></svg>`};
+function segBar(parts){return `<div class="segbar">${parts.map(p=>`<div style="width:${p.pct}%;background:${p.color}" title="${p.label}: ${INRF.format(p.value)}"></div>`).join('')}</div>`}
+function legend(items,total){return `<div class="legend">${items.map(it=>`<div class="lg-row"><span class="lg-sw" style="background:${it.color}"></span>${it.label}
+  <span class="lg-val">${INRF.format(it.value)}</span><span class="lg-pct">${(it.value/total*100).toFixed(1)}%</span></div>`).join('')}</div>`}
+
+/* ---------- 4. UI PRIMITIVES ---------- */
+function toast(msg,type='info'){const map={ok:['check-circle-2','var(--success)','var(--success-soft)'],err:['alert-circle','var(--danger)','var(--danger-soft)'],
+  warn:['alert-triangle','var(--warning)','var(--warning-soft)'],info:['info','var(--info)','var(--info-soft)']};const m=map[type]||map.info;
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML=`<span class="t-ic" style="color:${m[1]};background:${m[2]}"><i data-lucide="${m[0]}"></i></span><span>${msg}</span>`;
+  $('#toasts').appendChild(el);icons();setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),260)},3600)}
+function openModal({title,sub,body,foot,size=''} , onClose){
+  const root=$('#modalRoot');
+  root.innerHTML=`<div class="ovl" data-action="ovl"><div class="dlg ${size}" role="dialog" aria-modal="true" aria-label="${esc(title||'')}">
+    <div class="dlg-hd"><div><h3>${title||''}</h3>${sub?`<div class="sub">${sub}</div>`:''}</div>
+    <button class="btn iconb ghost" data-action="modal-close" aria-label="Close dialog"><i data-lucide="x"></i></button></div>
+    <div class="dlg-bd">${body}</div>${foot?`<div class="dlg-ft">${foot}</div>`:''}</div></div>`;
+  icons();root._onClose=onClose;setTimeout(()=>{const f=$('.dlg input,.dlg textarea,.dlg select,.dlg .btn.primary',root);f&&f.focus()},60);return root}
+function closeModal(){const r=$('#modalRoot');r.innerHTML='';r._onClose=null}
+const confirmModal=(t,msg,ok,cb,danger=true)=>openModal({title:t,sub:msg,foot:`<button class="btn" data-action="modal-close">Cancel</button>
+  <button class="btn ${danger?'danger':'primary'}" id="cfmOk">${ok}</button>`},()=>{})&&( $('#cfmOk').onclick=()=>{closeModal();cb()});
+function audit(msg,type='general',cname='—'){AUDIT.unshift({msg,admin:'Arjun Mehta',type,cafe:cname,ip:'14.224.6.81',res:'success',ts:new Date()})}
+const kpi=({icon,color,soft,label,value,f,change,vs,spark,sparkC})=>`
+ <div class="kpi"><div class="kpi-top"><span class="kpi-ic" style="color:${color};background:${soft}"><i data-lucide="${icon}"></i></span>
+ ${change?`<span class="delta ${change>=0?'up':'down'}"><i data-lucide="${change>=0?'arrow-up-right':'arrow-down-right'}"></i>${Math.abs(change)}%</span>`:''}</div>
+ <div class="kpi-val" data-count="${value}" data-f="${f||'n'}">0</div><div class="kpi-lbl">${label}</div>
+ <div class="kpi-foot"><span class="kpi-vs">${vs||'vs last month'}</span></div>
+ ${spark?sparkSVG(spark,sparkC||color):''}</div>`;
+const prog=(label,val,max,unit='')=>{const pct=Math.min(100,val/max*100);const cl=pct>=95?'danger':pct>=80?'warn':'ok';
+ return `<div class="mb"><div class="split" style="padding:0 0 6px"><span style="font-weight:600">${label}</span>
+ <span class="mono muted">${INRF.format(val)} / ${max===-1?'∞':INRF.format(max)} ${unit}</span></div>
+ <div class="pbar"><div class="pfill ${cl}" style="width:0" data-w="${pct}"></div></div>
+ <div style="display:flex;justify-content:flex-end;font-size:11px" class="mono muted mt" >${pct.toFixed(1)}%</div></div>`};
+const emptyState=(ic,t,d,btn)=>`<div class="empty"><span class="e-ic"><i data-lucide="${ic}"></i></span><h4>${t}</h4><p>${d}</p>${btn||''}</div>`;
+const skeleton=()=>`<div class="sk-grid"><div class="sk" style="height:34px;width:40%"></div>
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">${'<div class="sk" style="height:118px"></div>'.repeat(4)}</div>
+ <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px"><div class="sk" style="height:300px"></div><div class="sk" style="height:300px"></div></div></div>`;
+
+/* ---------- 5. DATA TABLE ENGINE ---------- */
+function dataTable(mount,cfg){
+  const st={rows:cfg.rows.slice(),page:1,per:cfg.per||10,sk:null,dir:1,sel:new Set()};
+  const idKey=cfg.id||'id';
+  function sorted(){if(!st.sk)return st.rows;const c=cfg.cols.find(x=>x.key===st.sk);
+    return st.rows.slice().sort((a,b)=>{const va=c.val?c.val(a):a[st.sk],vb=c.val?c.val(b):b[st.sk];
+    return(typeof va==='number'&&typeof vb==='number'?va-vb:String(va).localeCompare(String(vb)))*st.dir})}
+  function draw(){
+    const rows=sorted(),total=rows.length,pages=Math.max(1,Math.ceil(total/st.per));
+    st.page=Math.min(st.page,pages);
+    const pg=rows.slice((st.page-1)*st.per,st.page*st.per);
+    let html='';
+    if(st.sel.size)html+=`<div class="bulkbar"><b>${st.sel.size} selected</b>${cfg.bulk.map(b=>`<button class="btn sm soft" data-bulk="${b.k}"><i data-lucide="${b.icon}"></i>${b.label}</button>`).join('')}
+      <button class="btn sm ghost" data-bulk="clear">Clear</button></div>`;
+    html+=`<div class="table-scroll"><table class="tbl"><thead><tr>
+      ${cfg.select?`<th style="width:36px"><input type="checkbox" class="cbx" data-thcb ${st.sel.size&&pg.every(r=>st.sel.has(r[idKey]))?'checked':''}></th>`:''}
+      ${cfg.cols.map(c=>`<th class="${c.sort?'sortable':''}" data-sort="${c.sort?c.key:''}">${c.label}${st.sk===c.key?` <span class="arr">${st.dir>0?'↑':'↓'}</span>`:''}</th>`).join('')}
+    </tr></thead><tbody>`;
+    if(!pg.length)html+=`<tr><td colspan="${cfg.cols.length+(cfg.select?1:0)}">${emptyState(cfg.emptyIcon||'search','Nothing here',cfg.emptyMsg||'No records match your current filters.')}</td></tr>`;
+    pg.forEach(r=>{html+=`<tr data-rid="${r[idKey]}" class="${cfg.click?'click':''} ${st.sel.has(r[idKey])?'sel':''} ${cfg.rowCls?cfg.rowCls(r):''}">
+      ${cfg.select?`<td><input type="checkbox" class="cbx" data-rowcb ${st.sel.has(r[idKey])?'checked':''}></td>`:''}
+      ${cfg.cols.map(c=>`<td>${c.render(r)}</td>`).join('')}</tr>`});
+    html+=`</tbody></table></div>
+    <div class="tbl-foot"><span>Showing ${total?((st.page-1)*st.per+1):'0'}–${Math.min(total,st.page*st.per)} of ${total}</span>
+    <div class="row"><label class="muted" style="font-size:12px">Rows
+      <select class="sel" data-per style="width:auto;padding:5px 8px">${[10,25,50].map(n=>`<option ${n===st.per?'selected':''}>${n}</option>`).join('')}</select></label>
+    <button class="btn sm" data-pg="prev" ${st.page<=1?'disabled':''}><i data-lucide="chevron-left"></i></button>
+    <span class="mono muted" style="font-size:12px">${st.page} / ${pages}</span>
+    <button class="btn sm" data-pg="next" ${st.page>=pages?'disabled':''}><i data-lucide="chevron-right"></i></button></div></div>`;
+    mount.innerHTML=html;icons();
+    $$('[data-w]',mount).forEach(p=>requestAnimationFrame(()=>p.style.width=p.dataset.w+'%'));
+    $$('th.sortable',mount).forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(st.sk===k)st.dir*=-1;else{st.sk=k;st.dir=1}draw()});
+    const thcb=$('[data-thcb]',mount);if(thcb)thcb.onchange=e=>{pg.forEach(r=>e.target.checked?st.sel.add(r[idKey]):st.sel.delete(r[idKey]));draw()};
+    $$('[data-rowcb]',mount).forEach(cb=>cb.onchange=e=>{const rid=e.target.closest('tr').dataset.rid;e.target.checked?st.sel.add(rid):st.sel.delete(rid);draw()});
+    $$('[data-pg]',mount).forEach(b=>b.onclick=()=>{st.page+=b.dataset.pg==='next'?1:-1;draw()});
+    const per=$('[data-per]',mount);if(per)per.onchange=e=>{st.per=+e.target.value;st.page=1;draw()};
+    $$('[data-bulk]',mount).forEach(b=>b.onclick=()=>{if(b.dataset.bulk==='clear'){st.sel.clear();return draw()}
+      const bc=cfg.bulk.find(x=>x.k===b.dataset.bulk);bc&&bc.onClick([...st.sel],api)});
+    if(cfg.onRow)$$('tr[data-rid]',mount).forEach(tr=>tr.onclick=e=>{if(e.target.closest('input,button,a,.dd'))return;cfg.onRow(sorted().find(r=>String(r[idKey])===tr.dataset.rid))});
+  }
+  const api={setRows(r){st.rows=r;st.page=1;st.sel.clear();draw()},selected:()=>st.sel,refresh:draw,count:()=>st.rows.length,
+    export(name,map){exportCSV(name,[cfg.cols.map(c=>c.label),...sorted().map(map)])}};
+  draw();return api}
+
+/* ---------- 6. LAYOUT: SIDEBAR + TOPBAR ---------- */
+const NAV=[['Overview',[['dashboard','Dashboard','layout-dashboard']]],
+ ['Tenants',[['cafes','All Cafes','store'],['add-cafe','Add Cafe','plus'],['requests','Cafe Requests','inbox',4],['suspended','Suspended Cafes','ban']]],
+ ['Subscriptions',[['plans','Plans','layers'],['subscriptions','Active Subs','credit-card'],['trials','Trials','timer','7w'],['failed-payments','Failed Payments','alert-triangle','27r']]],
+ ['Revenue',[['revenue','Revenue Overview','trending-up'],['transactions','Transactions','arrow-left-right'],['payouts','Payouts','wallet'],['invoices','Invoices','receipt']]],
+ ['Platform',[['orders','Orders','shopping-bag'],['products','Products','package'],['staff','Staff','users'],['usage','Usage & Limits','gauge']]],
+ ['Support',[['support','Support Tickets','life-buoy',6],['announcements','Announcements','megaphone']]],
+ ['System',[['admins','Admin Users','shield'],['roles','Roles & Permissions','key-round'],['audit-logs','Audit Logs','scroll-text'],['settings','System Settings','settings']]]];
+function renderSidebar(){
+  $('#sidebar').innerHTML=`
+  <div class="sb-brand"><span class="sb-logo"><i data-lucide="coffee"></i></span>
+    <div class="sb-name">CafeOS Admin<small>Master Console</small></div></div>
+  <div class="sb-env"><span class="pulse"></span><span>PRODUCTION · v4.2.1</span></div>
+  <nav class="sb-nav" id="sbNav">${NAV.map(([g,items])=>`<div class="sb-group"><div class="sb-glabel">${g}</div>
+    ${items.map(([id,lbl,ic,b])=>`<a class="sb-item" data-nav="${id}" href="#/${id}" data-tip="${lbl}"><i data-lucide="${ic}"></i><span class="lbl">${lbl}</span>
+    ${b?`<span class="sb-badge ${String(b).endsWith('w')?'warn':String(b).endsWith('r')?'danger':''}">${String(b).replace(/[wr]/,'')}</span>`:''}</a>`).join('')}</div>`).join('')}</nav>
+  <div class="sb-foot">
+    <div class="sb-user">${avatar('Arjun Mehta')}<div><div class="sb-uname">Arjun Mehta</div><div class="sb-urole">Super Admin</div></div></div>
+    <div class="sb-footrow">
+      <button class="sb-fbtn" data-action="notif-toggle" data-tip="Notifications"><i data-lucide="bell"></i><span>Alerts</span></button>
+      <button class="sb-fbtn" data-action="help"><i data-lucide="help-circle"></i><span>Help</span></button>
+      <button class="sb-fbtn" data-action="logout"><i data-lucide="log-out"></i><span>Exit</span></button>
+    </div></div>
+  <button class="sb-collapse" data-action="sb-collapse" aria-label="Collapse sidebar"><i data-lucide="chevrons-left"></i></button>`}
+function renderTopbar(){
+  $('#topbar').innerHTML=`
+  <button class="icon-btn tb-burger" data-action="sb-mobile" aria-label="Open menu"><i data-lucide="menu"></i></button>
+  <div class="tb-title"><div class="crumbs" id="crumbs"></div><h1 id="pageTitle">Dashboard</h1></div>
+  <div class="tb-right">
+    <button class="search-btn" data-action="cmdk" aria-label="Global search"><i data-lucide="search"></i><span>Search cafes, orders, invoices…</span><kbd>⌘K</kbd></button>
+    <div class="dd"><button class="icon-btn" data-action="quick" aria-label="Quick actions"><i data-lucide="zap"></i></button>
+      <div class="menu" id="quickMenu"><div class="menu-hd">Quick actions</div>
+        <a class="mi" href="#/add-cafe"><i data-lucide="plus"></i>New Cafe</a>
+        <a class="mi" href="#/plans/new"><i data-lucide="layers"></i>New Plan</a>
+        <a class="mi" href="#/announcements"><i data-lucide="megaphone"></i>New Announcement</a>
+        <hr><button class="mi" data-action="export-cafes"><i data-lucide="download"></i>Export Cafes CSV</button></div></div>
+    <div class="dd"><button class="icon-btn" data-action="notif-toggle" aria-label="Notifications"><i data-lucide="bell"></i><span class="n-dot" id="nDot"></span></button>
+      <div class="menu notif-panel" id="notifMenu"></div></div>
+    <button class="icon-btn" data-action="theme" aria-label="Toggle theme" id="themeBtn"></button>
+    <div class="dd"><button class="icon-btn" data-action="prof" aria-label="Profile" style="width:auto;padding:3px;border-radius:11px">${avatar('Arjun Mehta')}</button>
+      <div class="menu" style="min-width:250px"><div class="prof-card">${avatar('Arjun Mehta','av av-lg')}<div><b style="font-size:13.5px">Arjun Mehta</b><div class="cell-sub">arjun@cafeos.in · Super Admin</div></div></div>
+        <a class="mi" href="#/settings"><i data-lucide="settings"></i>Profile & Settings</a>
+        <button class="mi" data-action="cmdk"><i data-lucide="command"></i>Command Palette <small>⌘K</small></button>
+        <hr><button class="mi danger" data-action="logout"><i data-lucide="log-out"></i>Sign out</button></div></div>
+  </div>`;
+  $('#themeBtn').innerHTML=`<i data-lucide="${document.documentElement.dataset.theme==='dark'?'sun':'moon'}"></i>`;
+  updateNotifDot()}
+function updateNotifDot(){const n=NOTIFS.filter(x=>!x.read).length;const d=$('#nDot');if(d){d.textContent=n;d.style.display=n?'grid':'none'}}
+function renderNotifMenu(){
+  $('#notifMenu').innerHTML=`<div class="notif-head"><b>Notifications</b>
+    <button class="btn sm ghost" data-action="notif-allread">Mark all read</button></div>
+  <div class="notif-list">${NOTIFS.map((n,i)=>{const cls={danger:['var(--danger)','var(--danger-soft)'],warning:['var(--warning)','var(--warning-soft)'],info:['var(--info)','var(--info-soft)'],success:['var(--success)','var(--success-soft)']}[n.cl];
+    return `<div class="notif-item ${n.read?'':'unread'}" data-action="notif-go" data-i="${i}">
+    <span class="n-ic" style="color:${cls[0]};background:${cls[1]}"><i data-lucide="${n.ic}"></i></span>
+    <div><p>${n.t}</p><time>${n.time}</time></div></div>`}).join('')}</div>
+  <div class="notif-foot"><button class="btn sm soft" data-action="notif-allread">View all in inbox</button></div>`;icons()}
+
+/* ---------- 7. VIEWS ---------- */
+const vDashboard=()=>`
+ <div class="page-hd"><div><div class="eyebrow">Platform health · Wed, 19 Aug 2026</div>
+   <h2>Good morning, Arjun 👋</h2><div class="sub">Here's what's happening across your 1,248 cafes today.</div></div>
+   <div class="row"><button class="btn" data-action="export-cafes"><i data-lucide="download"></i>Export</button>
+   <a class="btn primary" href="#/add-cafe"><i data-lucide="plus"></i>Add Cafe</a></div></div>
+ <div class="kpis">
+  ${kpi({icon:'store',color:'var(--primary)',soft:'var(--primary-soft)',label:'Total Cafes',value:1248,change:12.4,spark:[8,9,9,10,11,12,12,13],sparkC:'#2563EB'})}
+  ${kpi({icon:'check-circle-2',color:'var(--success)',soft:'var(--success-soft)',label:'Active Cafes',value:986,change:8.2,spark:[7,8,8,9,9,10,10,11],sparkC:'#16A34A'})}
+  ${kpi({icon:'timer',color:'var(--info)',soft:'var(--info-soft)',label:'Trial Cafes',value:143,change:3.1,vs:'7 ending this week',spark:[12,11,12,13,13,14,14,14],sparkC:'#0284C7'})}
+  ${kpi({icon:'ban',color:'var(--slate)',soft:'var(--slate-soft)',label:'Suspended',value:19,change:-2.4,vs:'2 this month',spark:[6,6,5,5,5,4,5,5],sparkC:'#64748B'})}
+  ${kpi({icon:'indian-rupee',color:'var(--primary)',soft:'var(--primary-soft)',label:'Monthly Recurring Revenue',value:842500,f:'inr',change:14.8,spark:[5.4,5.9,6.2,6.6,7,7.5,7.8,8.4],sparkC:'#2563EB'})}
+  ${kpi({icon:'alert-triangle',color:'var(--danger)',soft:'var(--danger-soft)',label:'Failed Payments',value:27,change:-8.1,vs:'₹38,400 at risk',spark:[9,8,8,7,7,6,6,5],sparkC:'#DC2626'})}
+  ${kpi({icon:'shopping-bag',color:'var(--violet)',soft:'var(--violet-soft)',label:'Total Orders',value:184920,change:11.2,spark:[11,12,13,13,14,15,16,18],sparkC:'#7C3AED'})}
+  ${kpi({icon:'circle-dollar-sign',color:'var(--success)',soft:'var(--success-soft)',label:'Platform GMV',value:4.82e7,f:'cr',change:9.6,spark:[2.9,3.1,3.4,3.6,3.9,4.3,4.6,4.8],sparkC:'#16A34A'})}
+ </div>
+ <div class="grid g-2-1 mt-lg">
+   <div class="card"><div class="card-hd"><div><h3>MRR Growth</h3><div class="hint">Monthly recurring revenue · last 12 months</div></div>
+     <div class="row"><span class="chip"><span class="lg-sw" style="background:#2563EB;display:inline-block"></span>Current</span><span class="chip"><span class="lg-sw" style="background:#94A3B8;display:inline-block"></span>Previous period</span></div></div>
+     <div class="card-bd">${lineSVG({labels:MONTHS,series:[{name:'Previous',data:MRR_PREV,color:'#94A3B8',dash:true,dots:false},{name:'MRR',data:MRR12,color:'#2563EB',fill:'blue'}],yFmt:inrL})}</div></div>
+   <div class="card"><div class="card-hd"><h3>Subscription Distribution</h3><span class="chip">1,020 paid</span></div>
+     <div class="card-bd">${(()=>{const items=PLAN_ORDER.map(p=>({label:PLANS[p].name,value:PLANS[p].subs,color:PLAN_CLR[p]}));
+       return donutSVG({items,centerTop:'1,020',centerSub:'subscriptions'})+legend(items,1020)})()}</div></div>
+ </div>
+ <div class="grid g3 mt">
+   <div class="card"><div class="card-hd"><h3>New Cafe Registrations</h3></div><div class="card-bd">${barSVG({labels:MONTHS,data:REGS,color:'#2563EB'})}</div></div>
+   <div class="card"><div class="card-hd"><h3>Payment Status</h3><div class="hint">This month · subscription charges</div></div>
+     <div class="card-bd">${(()=>{const items=[{label:'Successful',value:1240,color:'#16A34A'},{label:'Failed',value:27,color:'#DC2626'},{label:'Pending',value:43,color:'#F59E0B'},{label:'Refunded',value:12,color:'#7C3AED'}];const tot=1322;
+       return segBar(items.map(i=>({...i,pct:i.value/tot*100})))+`<div class="mt">${legend(items,tot)}</div>`})()}</div></div>
+   <div class="card"><div class="card-hd"><h3>Platform GMV</h3><div class="hint">Cafe customer payments (not SaaS revenue)</div></div>
+     <div class="card-bd">${barSVG({labels:MONTHS,data:GMV12,color:'#7C3AED',yFmt:inrCr})}</div></div>
+ </div>
+ <div class="grid g-2-1 mt">
+   <div class="card"><div class="card-hd"><div><h3>Orders — last 30 days</h3><div class="hint">Across all cafes · <b class="mono" id="liveOrders">6,847</b> today <span class="bdg b-g" style="animation:pulse 2s infinite">LIVE</span></div></div>
+     <select class="sel" style="width:auto" onchange="this.blur()"><option>Daily</option><option>Weekly</option></select></div>
+     <div class="card-bd">${lineSVG({labels:Array.from({length:30},(_,i)=>(i+21>31?(i+21-31)+' Aug':(i+21)+' Jul')),series:[{name:'Orders',data:ORD30,color:'#0284C7',fill:'cyan'}],yFmt:v=>INRF.format(Math.round(v)),xEvery:5})}</div></div>
+   <div class="card"><div class="card-hd"><h3>Needs Attention</h3><span class="bdg b-r">${3+7+4} items</span></div>
+     <div class="card-bd tight"><div class="tl" style="padding:16px 16px 4px 24px">
+       ${ACTIVITY.slice(0,7).map(a=>`<div class="tl-item"><span class="tl-ic" style="color:${({ 'b-g':'var(--success)','b-r':'var(--danger)','b-b':'var(--primary)','b-s':'var(--slate)','b-v':'var(--violet)','b-i':'var(--info)'})[a.cl]};background:${({ 'b-g':'var(--success-soft)','b-r':'var(--danger-soft)','b-b':'var(--primary-soft)','b-s':'var(--slate-soft)','b-v':'var(--violet-soft)','b-i':'var(--info-soft)'})[a.cl]}"><i data-lucide="${a.ic}"></i></span>
+       <div><p>${a.t}</p><div class="muted" style="font-size:12px">${a.c}</div><time>${a.time}</time></div></div>`).join('')}</div></div></div>
+ </div>`;
+
+const cafeCols=(withSel)=>[
+ {label:'Cafe',key:'name',sort:1,render:c=>`<div class="row" style="gap:10px">${avatar(c.name)}<div><div class="cell-main">${c.name}</div><div class="cell-sub">/${c.slug} · ${c.city}</div></div></div>`},
+ {label:'Owner',key:'owner',sort:1,render:c=>`<div class="cell-main" style="font-weight:500">${c.owner}</div><div class="cell-sub">${c.phone}</div>`},
+ {label:'Email',render:c=>`<span class="cell-id">${c.email}</span>`},
+ {label:'Plan',key:'plan',sort:1,render:c=>`<span class="chip" style="color:${PLAN_CLR[c.plan]};border-color:${PLAN_CLR[c.plan]}44;background:${PLAN_CLR[c.plan]}14">${PLANS[c.plan].name}</span>`},
+ {label:'Subscription',render:c=>`<span class="cell-id">${c.subId}</span><div class="cell-sub">${c.cycle} · ${inr(PLANS[c.plan].pm)}/mo</div>`},
+ {label:'Orders',key:'orders',sort:1,val:c=>c.orders,render:c=>`<span class="mono">${INRF.format(c.orders)}</span>`},
+ {label:'GMV',key:'gmv',sort:1,val:c=>c.gmv,render:c=>`<span class="mono" style="font-weight:600">${compact(c.gmv)}</span>`},
+ {label:'Created',key:'created',sort:1,val:c=>+c.created,render:c=>fmtDate(c.created)},
+ {label:'Last Active',val:c=>+c.lastActive,render:c=>`<span class="muted">${timeAgo(c.lastActive)}</span>`},
+ {label:'Status',key:'status',sort:1,render:c=>badge(c.status)},
+ {label:'',render:c=>`<div class="dd"><button class="btn iconb ghost" data-action="rowmenu"><i data-lucide="more-horizontal"></i></button>
+   <div class="menu"><a class="mi" href="#/cafe/${c.id}"><i data-lucide="eye"></i>View details</a>
+   <button class="mi" data-action="impersonate" data-id="${c.id}"><i data-lucide="log-in"></i>Login as Cafe</button>
+   <button class="mi" data-action="change-plan" data-id="${c.id}"><i data-lucide="layers"></i>Change plan</button>
+   ${c.status==='suspended'?`<button class="mi" data-action="reactivate" data-id="${c.id}"><i data-lucide="check-circle-2"></i>Reactivate</button>`
+     :`<button class="mi danger" data-action="suspend-cafe" data-id="${c.id}"><i data-lucide="ban"></i>Suspend</button>`}
+   <hr><button class="mi danger" data-action="delete-cafe" data-id="${c.id}"><i data-lucide="trash-2"></i>Delete cafe</button></div></div>`}];
+const cafeBulk=[
+ {k:'suspend',label:'Suspend',icon:'ban',onClick:(ids)=>confirmModal('Suspend '+ids.length+' cafes?','Selected cafes will lose dashboard access immediately. Subscriptions stay billed until cancelled.','Suspend',()=>{ids.forEach(i=>{const c=cafe(i);if(c)c.status='suspended'});toast(ids.length+' cafes suspended','warn');route()})},
+ {k:'activate',label:'Activate',icon:'check-circle-2',onClick:(ids)=>{ids.forEach(i=>{const c=cafe(i);if(c)c.status='active'});toast(ids.length+' cafes activated','ok');route()}},
+ {k:'announce',label:'Send Announcement',icon:'megaphone',onClick:(ids)=>{location.hash='#/announcements';toast('Audience pre-set to '+ids.length+' selected cafes','info')}},
+ {k:'export',label:'Export',icon:'download',onClick:(ids,api)=>api.export('cafes.csv',r=>[r.name,r.owner,r.email,PLANS[r.plan].name,r.status,r.orders,r.gmv])}];
+
+const vCafes=()=>{setTimeout(()=>{
+  const apply=debounce(()=>{const q=$('#cafeQ').value.toLowerCase(),st=$('#fStatus').value,pl=$('#fPlan').value,ss=$('#fSub').value,rev=$('#fRev').value,age=$('#fAge').value;
+    let rows=CAFES.filter(c=>(!q||c.name.toLowerCase().includes(q)||c.owner.toLowerCase().includes(q)||c.email.includes(q)||c.phone.includes(q))
+      &&(st==='all'||c.status===st)&&(pl==='all'||c.plan===pl)
+      &&(ss==='all'||(ss==='subscribed'?!['trial','pending_setup','expired'].includes(c.status):ss==='trial'?c.status==='trial':c.status===ss))
+      &&(rev==='all'||(rev==='lt5'?(c.gmv<5e5):(rev==='5to20'?(c.gmv>=5e5&&c.gmv<2e6):c.gmv>=2e6)))
+      &&(age==='all'||+c.created>+daysAgo(+age)))});
+    dt.setRows(rows)},220);
+  window._cafeApply=apply},40);
+ return `<div class="page-hd"><div><h2>All Cafes</h2><div class="sub">Every tenant on the platform — ${CAFES.length} shown of 1,248 total.</div></div>
+   <div class="row"><button class="btn" data-action="export-cafes"><i data-lucide="download"></i>Export CSV</button><a class="btn primary" href="#/add-cafe"><i data-lucide="plus"></i>Add Cafe</a></div></div>
+  <div class="card"><div class="toolbar">
+    <div class="inp-wrap" style="flex:1;max-width:300px"><input class="inp" id="cafeQ" placeholder="Search name, owner, email, phone…" aria-label="Search cafes" style="padding-left:34px">
+      <i data-lucide="search" style="position:absolute;left:11px;top:11px;width:15px;height:15px;color:var(--text-3)"></i></div>
+    <select class="sel" id="fStatus" aria-label="Status filter"><option value="all">All statuses</option><option value="active">Active</option><option value="trial">Trial</option><option value="payment_failed">Payment Failed</option><option value="suspended">Suspended</option><option value="expired">Expired</option><option value="pending_setup">Pending Setup</option></select>
+    <select class="sel" id="fPlan" aria-label="Plan filter"><option value="all">All plans</option>${PLAN_ORDER.map(p=>`<option value="${p}">${PLANS[p].name}</option>`).join('')}</select>
+    <select class="sel" id="fSub" aria-label="Subscription filter"><option value="all">Any subscription</option><option value="subscribed">Subscribed</option><option value="trial">On trial</option><option value="payment_failed">Payment failed</option><option value="expired">Expired</option></select>
+    <select class="sel" id="fRev" aria-label="Revenue filter"><option value="all">Any revenue</option><option value="lt5">Under ₹5L GMV</option><option value="5to20">₹5L – ₹20L</option><option value="gt20">Over ₹20L</option></select>
+    <select class="sel" id="fAge" aria-label="Registration date"><option value="all">Any registration date</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select>
+  </div><div id="cafeTable"></div></div>`};
+
+const vCafeDetail=(id)=>{const c=cafe(id);if(!c)return emptyState('store','Cafe not found','This tenant may have been deleted.');
+ const p=PLANS[c.plan],lim=p;
+ const tabs={overview:`<div class="grid g3">
+   <div class="card"><div class="card-hd"><h3>Cafe Information</h3><span class="chip mono">${c.id}</span></div><div class="card-bd">
+     <div class="kv"><dt>Legal name</dt><dd style="font-family:var(--ui)">${c.name} LLP</dd><dt>Address</dt><dd style="font-family:var(--ui);text-align:right">14, MG Road, ${c.city}</dd>
+     <dt>Phone</dt><dd>${c.phone}</dd><dt>Email</dt><dd>${c.email}</dd><dt>Slug</dt><dd>/${c.slug}</dd><dt>Timezone</dt><dd>IST (UTC+5:30)</dd></div></div></div>
+   <div class="card"><div class="card-hd"><h3>Owner</h3><button class="btn sm" data-action="contact-owner" data-id="${c.id}"><i data-lucide="mail"></i>Contact</button></div>
+     <div class="card-bd"><div class="row gap-lg" style="align-items:center">${avatar(c.owner,'av av-lg')}<div><b>${c.owner}</b><div class="cell-sub">Primary contact · since ${fmtDate(c.created)}</div></div></div>
+     <hr class="divider"><div class="kv"><dt>Email</dt><dd style="font-family:var(--ui)">${c.email}</dd><dt>Phone</dt><dd>${c.phone}</dd><dt>2FA</dt><dd style="font-family:var(--ui)">${badge('enabled')}</dd></div></div></div>
+   <div class="card"><div class="card-hd"><h3>Subscription Snapshot</h3><a class="btn sm ghost" href="#/subscriptions">View all</a></div><div class="card-bd">
+     <div class="kv"><dt>Plan</dt><dd style="font-family:var(--ui)"><span class="chip" style="color:${PLAN_CLR[c.plan]}">${p.name}</span></dd>
+     <dt>Billing</dt><dd>${inr(c.cycle==='yearly'?p.py:p.pm)} / ${c.cycle==='yearly'?'yr':'mo'}</dd><dt>Status</dt><dd style="font-family:var(--ui)">${badge(c.status)}</dd>
+     <dt>Next billing</dt><dd>${fmtDate(daysAhead(12))}</dd><dt>MRR share</dt><dd>${inr(p.pm)}</dd></div></div></div></div>
+  <div class="kpis mt">
+   ${kpi({icon:'circle-dollar-sign',color:'var(--success)',soft:'var(--success-soft)',label:'Lifetime GMV',value:c.gmv,f:c.gmv>=1e7?'cr':'l',spark:[1,2,2,3,4,5,6,7],sparkC:'#16A34A',vs:'customer payments'})}
+   ${kpi({icon:'shopping-bag',color:'var(--violet)',soft:'var(--violet-soft)',label:'Total Orders',value:c.orders,spark:[2,3,3,4,4,5,6,6],sparkC:'#7C3AED'})}
+   ${kpi({icon:'users',color:'var(--info)',soft:'var(--info-soft)',label:'Staff Members',value:c.staffTotal,vs:lim.staff===-1?'unlimited on '+p.name:'limit '+lim.staff})}
+   ${kpi({icon:'hard-drive',color:'var(--warning)',soft:'var(--warning-soft)',label:'Storage Used',value:+c.storage,f:'n',vs:'GB of '+lim.storage})}
+   ${kpi({icon:'activity',color:'var(--primary)',soft:'var(--primary-soft)',label:'API Requests / day',value:Math.floor(rnd(c.id.length+2)*8000)+1200,vs:'limit '+lim.api})}
+  </div>`,
+ subscription:`<div class="grid g2"><div class="card"><div class="card-hd"><h3>Current Plan — ${p.name}</h3>${badge(c.status)}</div><div class="card-bd">
+   <div class="kv"><dt>Subscription ID</dt><dd>${c.subId}</dd><dt>Razorpay Plan</dt><dd>plan_${c.plan}2026X</dd><dt>Billing cycle</dt><dd>${c.cycle}</dd>
+   <dt>Price</dt><dd>${inr(c.cycle==='yearly'?p.py:p.pm)} / ${c.cycle==='yearly'?'year':'month'}</dd><dt>Started</dt><dd>${fmtDate(c.created)}</dd>
+   <dt>Next billing</dt><dd>${fmtDate(daysAhead(12))}</dd><dt>Payment status</dt><dd style="font-family:var(--ui)">${badge(c.status==='payment_failed'?'failed':'paid')}</dd>
+   <dt>Trial</dt><dd style="font-family:var(--ui)">${c.status==='trial'?badge('trial')+' '+c.trialDaysLeft+' days left':'Completed'}</dd>
+   <dt>Renewal</dt><dd style="font-family:var(--ui)">${c.status==='expired'?badge('expired'):'Auto-renew ON'}</dd></div>
+   <hr class="divider"><div class="row"><button class="btn sm primary" data-action="change-plan" data-id="${c.id}"><i data-lucide="arrow-up-right"></i>Upgrade / Change</button>
+   <button class="btn sm" data-action="pause-sub" data-id="${c.id}"><i data-lucide="pause-circle"></i>Pause</button>
+   <button class="btn sm danger" data-action="cancel-sub" data-id="${c.id}"><i data-lucide="x"></i>Cancel</button></div></div></div>
+  <div class="card"><div class="card-hd"><h3>Billing History</h3></div><div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Invoice</th><th>Amount</th><th>Period</th><th>Status</th></tr></thead><tbody>
+   ${INVOICES.filter(i=>i.cafe.id===c.id).slice(0,5).concat([INVOICES[0]]).map((inv,i)=>`<tr><td class="cell-id">${c.id}-INV-${2026}-${String(14-i).padStart(3,'0')}</td><td class="mono">${inr(p.pm)}</td><td>${MONTHS[(18-i)%12]} 2026</td><td>${i===2?badge('failed'):badge('paid')}</td></tr>`).join('')}</tbody></table></div></div></div>`,
+ orders:`<div class="card"><div class="card-hd"><h3>Orders at ${c.name}</h3><span class="chip">Tenant-scoped data</span></div>
+  <div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead><tbody>
+  ${ORDERS.filter(o=>o.cafe.id===c.id).concat(ORDERS.slice(0,6)).slice(0,9).map(o=>`<tr><td class="cell-id">${o.id}</td><td>${o.customer}</td><td class="mono">${inr(o.amount)}</td><td>${badge(o.pay)}</td><td>${badge(o.st)}</td><td class="muted">${fmtDT(o.date)}</td></tr>`).join('')}</tbody></table></div></div>`,
+ revenue:`<div class="kpis mb">${kpi({icon:'indian-rupee',color:'var(--success)',soft:'var(--success-soft)',label:'This month',value:Math.round(c.gmv/9),f:'l',change:6.4})}
+   ${kpi({icon:'receipt',color:'var(--primary)',soft:'var(--primary-soft)',label:'Avg Order Value',value:c.aov,f:'inr',change:2.1})}
+   ${kpi({icon:'shopping-bag',color:'var(--violet)',soft:'var(--violet-soft)',label:'Orders / day',value:Math.round(c.orders/240)})}</div>
+  <div class="grid g2"><div class="card"><div class="card-hd"><h3>Daily Revenue</h3></div><div class="card-bd">${lineSVG({labels:Array.from({length:14},(_,i)=>(i+6)+' Aug'),series:[{name:'Revenue',data:Array.from({length:14},(_,i)=>c.aov*(16+rnd(i+hue(c.id)%9)*22)),color:'#16A34A',fill:'grn'}],yFmt:inrL})}</div></div>
+  <div class="card"><div class="card-hd"><h3>Monthly Orders</h3></div><div class="card-bd">${barSVG({labels:MONTHS,data:MONTHS.map((_,i)=>Math.round(c.orders/12*(0.7+rnd(i+hue(c.name)%7)*0.6))),color:'#7C3AED'})}</div></div></div>`,
+ staff:`<div class="kpis mb">${kpi({icon:'users',color:'var(--info)',soft:'var(--info-soft)',label:'Total Staff',value:c.staffTotal,vs:'of '+(lim.staff===-1?'∞':lim.staff)+' allowed'})}
+   ${kpi({icon:'user-check',color:'var(--success)',soft:'var(--success-soft)',label:'Active today',value:Math.max(1,Math.round(c.staffTotal*.6))})}
+   ${kpi({icon:'shield',color:'var(--violet)',soft:'var(--violet-soft)',label:'Roles in use',value:4})}</div>
+  <div class="card"><div class="card-hd"><h3>Staff Roster</h3></div><div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Last shift</th></tr></thead><tbody>
+   ${['Ravi Kumar|Manager','Sunita Devi|Cashier','Mohit Sharma|Barista','Ellena D’Souza|Barista','Ganesh Iyer|Kitchen'].map((s,i)=>{const[n,r]=s.split('|');
+     return `<tr><td><div class="row" style="gap:9px">${avatar(n)}<b style="font-weight:600">${n}</b></div></td><td><span class="chip">${r}</span></td><td>${i<Math.ceil(c.staffTotal*.6)?badge('enabled'):badge('disabled')}</td><td class="muted">${timeAgo(new Date(Date.now()-i*5*3600e3))}</td></tr>`}).join('')}</tbody></table></div></div>`,
+ usage:`<div class="card"><div class="card-hd"><h3>Plan Limits — ${p.name}</h3><a class="btn sm primary" href="#/plans">Compare plans</a></div><div class="card-bd">
+   ${prog('Orders this month',Math.floor(c.orders%lim.orders===0?lim.orders*.83:Math.min(c.orders,lim.orders===-1?c.orders:lim.orders*.84)),lim.orders) }
+   ${prog('Staff seats',c.staffTotal,lim.staff)}
+   ${prog('Products',c.products,lim.products)}
+   ${prog('Storage (GB)',+c.storage,parseFloat(lim.storage),'GB')}
+   ${prog('API requests (daily)',Math.floor(rnd(3)*8000)+1500,parseInt(lim.api)/1000*1000,'')}</div></div>`,
+ activity:`<div class="card"><div class="card-hd"><h3>Tenant Activity</h3><span class="chip"><i data-lucide="lock"></i>Scoped to ${c.name}</span></div><div class="card-bd">
+   <div class="tl">${[['check-circle-2','b-g','Owner updated menu pricing for 6 items','2h ago'],['log-in','b-v','Master Admin (you) viewed billing settings','6h ago'],
+   ['shopping-bag','b-b','Order milestone: '+INRF.format(c.orders)+' total orders','1d ago'],['credit-card','b-g','Subscription charge of '+inr(p.pm)+' captured','12d ago'],
+   ['users','b-b','New staff member added: Mohit Sharma','18d ago'],['store','b-s','Cafe onboarded on '+fmtDate(c.created),fmtDate(c.created)]]
+   .map(a=>`<div class="tl-item"><span class="tl-ic" style="background:var(--${({ 'b-g':'success','b-r':'danger','b-b':'primary','b-s':'slate','b-v':'violet'})[a[1]]}-soft);color:var(--${({ 'b-g':'success','b-r':'danger','b-b':'primary','b-s':'slate','b-v':'violet'})[a[1]]})"><i data-lucide="${a[0]}"></i></span>
+   <div><p>${a[2]}</p><time>${a[3]}</time></div></div>`).join('')}</div></div></div>`};
+ window._cafeTab='overview';
+ return `<div class="card" style="border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:0"><div class="card-bd" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+   ${avatar(c.name,'av av-lg')}
+   <div style="flex:1;min-width:200px"><div class="row"><h2 style="font-size:20px;font-weight:800;letter-spacing:-.02em">${c.name}</h2>${badge(c.status)}
+     <span class="chip" style="color:${PLAN_CLR[c.plan]}">${p.name} Plan</span></div>
+   <div class="muted" style="font-size:12.5px;margin-top:3px">${c.city} · Owned by <b>${c.owner}</b> · Tenant <span class="mono">${c.id}</span> · Joined ${fmtDate(c.created)}</div></div>
+   <div class="row">
+     ${c.status!=='suspended'?`<button class="btn danger sm" data-action="suspend-cafe" data-id="${c.id}"><i data-lucide="ban"></i>Suspend</button>`:`<button class="btn sm" data-action="reactivate" data-id="${c.id}"><i data-lucide="check-circle-2"></i>Reactivate</button>`}
+     <button class="btn sm" data-action="impersonate" data-id="${c.id}"><i data-lucide="log-in"></i>Login as Cafe</button>
+     <button class="btn sm" data-action="change-plan" data-id="${c.id}"><i data-lucide="layers"></i>Change Plan</button>
+     <button class="btn sm" data-action="contact-owner" data-id="${c.id}"><i data-lucide="mail"></i>Contact Owner</button>
+     <div class="dd"><button class="btn sm iconb" data-action="rowmenu" aria-label="More actions"><i data-lucide="more-horizontal"></i></button>
+       <div class="menu"><button class="mi" data-action="announce-cafe" data-id="${c.id}"><i data-lucide="megaphone"></i>Send announcement</button>
+       <button class="mi" data-action="export-cafe" data-id="${c.id}"><i data-lucide="download"></i>Export tenant data</button>
+       <hr><button class="mi danger" data-action="delete-cafe" data-id="${c.id}"><i data-lucide="trash-2"></i>Delete cafe…</button></div></div>
+   </div></div></div>
+  <div class="card" style="border-top-left-radius:0;border-top-right-radius:0"><div class="card-bd">
+   <div class="tabs">${Object.keys(tabs).map(t=>`<button class="tab ${t==='overview'?'on':''}" data-action="tab" data-tab="${t}" style="text-transform:capitalize">${t}</button>`).join('')}</div>
+   <div id="cafeTabBody">${tabs.overview}</div></div></div>
+  <script type="text/template" id="cafeTabsData">${''}<\/script>`;
+};
+
+const vAddCafe=()=>{window.W={step:1,d:{billing:'monthly',plan:'growth',verified:false}};return wizardHTML()};
+function wizardHTML(){const W=window.W,s=W.step,d=W.d;
+ const steps=['Cafe Info','Owner','Subscription','Payment Gateway','Review'];
+ const body=[
+ `<div class="fgrid">
+   <div class="field"><label class="lbl">Cafe Name <span class="req">*</span></label><input class="inp" id="wName" value="${d.name||''}" placeholder="e.g. Copper Kettle"><div class="ferr">Cafe name is required</div></div>
+   <div class="field"><label class="lbl">Slug</label><input class="inp mono" id="wSlug" value="${d.slug||''}" placeholder="auto-generated"><div class="hint">Used in the tenant URL: cafeos.in/<b id="slugPrev">${d.slug||'…'}</b></div></div>
+   <div class="field" style="grid-column:1/-1"><label class="lbl">Address</label><input class="inp" id="wAddr" value="${d.addr||''}" placeholder="Street, locality"></div>
+   <div class="field"><label class="lbl">City <span class="req">*</span></label><input class="inp" id="wCity" value="${d.city||''}" placeholder="Mumbai"><div class="ferr">City is required</div></div>
+   <div class="field"><label class="lbl">State</label><input class="inp" id="wState" value="${d.state||''}" placeholder="Maharashtra"></div>
+   <div class="field"><label class="lbl">Country</label><select class="sel" id="wCountry"><option>India</option><option>UAE</option><option>Singapore</option></select></div>
+   <div class="field"><label class="lbl">Phone <span class="req">*</span></label><input class="inp" id="wPhone" value="${d.phone||''}" placeholder="+91 98…"><div class="ferr">Valid phone required</div></div>
+   <div class="field"><label class="lbl">Cafe Email <span class="req">*</span></label><input class="inp" id="wEmail" value="${d.email||''}" placeholder="hello@cafe.in"><div class="ferr">Valid email required</div></div></div>`,
+ `<div class="fgrid">
+   <div class="field"><label class="lbl">Owner Name <span class="req">*</span></label><input class="inp" id="wOwner" value="${d.owner||''}" placeholder="Full name"><div class="ferr">Owner name is required</div></div>
+   <div class="field"><label class="lbl">Owner Email <span class="req">*</span></label><input class="inp" id="wOwnerEmail" value="${d.ownerEmail||''}" placeholder="owner@cafe.in"><div class="ferr">Valid email required</div></div>
+   <div class="field"><label class="lbl">Owner Phone</label><input class="inp" id="wOwnerPhone" value="${d.ownerPhone||''}" placeholder="+91 98…"></div></div>
+  <div class="info-note note-info"><i data-lucide="info"></i><span>A magic sign-in link and onboarding checklist will be emailed to the owner once the cafe is created.</span></div>`,
+ `<div class="row mb"><span class="lbl" style="margin:0">Billing cycle:</span>
+   <button class="btn sm ${d.billing==='monthly'?'primary':'soft'}" data-action="w-billing" data-v="monthly">Monthly</button>
+   <button class="btn sm ${d.billing==='yearly'?'primary':'soft'}" data-action="w-billing" data-v="yearly">Yearly <span style="opacity:.8">· save 17%</span></button></div>
+  <div class="plan-grid">${['starter','growth','pro'].map(pid=>{const p=PLANS[pid];const price=d.billing==='monthly'?p.pm:p.py;
+    return `<div class="plan-card ${p.pop?'pop':''} ${d.plan===pid?'sel':''}" data-action="w-plan" data-v="${pid}" role="radio" aria-checked="${d.plan===pid}" tabindex="0">
+    <div class="row" style="justify-content:space-between"><b style="font-size:15px">${p.name}</b>${d.plan===pid?'<i data-lucide="check-circle-2" style="color:var(--primary);width:18px"></i>':''}</div>
+    <div class="plan-price">${inr(price)}<small> / ${d.billing==='monthly'?'month':'year'}</small></div>
+    <ul class="plan-feat">${p.feats.slice(0,5).map(f=>`<li><i data-lucide="check"></i>${f}</li>`).join('')}</ul></div>`}).join('')}</div>
+  <div class="card mt"><div class="card-bd tight table-scroll"><table class="tbl matrix"><thead><tr><th>Feature</th><th>Starter</th><th>Growth</th><th>Pro</th></tr></thead><tbody>
+   ${[['Outlets','1','3','Unlimited'],['Staff','3','20','100'],['Orders / month','5,000','20,000','Unlimited'],['Products','150','500','Unlimited'],
+     ['Advanced analytics','—','✓','✓'],['API access','—','—','✓'],['Priority support','—','—','✓']]
+    .map(r=>`<tr><td style="font-weight:600">${r[0]}</td>${r.slice(1).map(v=>`<td class="mono">${v==='✓'?'<span style="color:var(--success)">✓</span>':v==='—'?'<span class="faint">—</span>':v}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`,
+ `<div class="info-note note-warn mb"><i data-lucide="shield"></i><span><b>Security:</b> the Key Secret is encrypted at rest and <b>never shown again</b> after saving. Customer payments settle directly into the cafe's own Razorpay account — they never touch platform funds.</span></div>
+  <div class="field"><label class="lbl">Razorpay Key ID <span class="req">*</span></label><input class="inp mono" id="wRzpId" value="${d.rzpId||''}" placeholder="rzp_live_xxxxxxxxxxxx"><div class="hint">Dashboard → Settings → API Keys</div></div>
+  ${d.verified?`<div class="info-note note-info" style="background:var(--success-soft);border-color:rgba(22,163,74,.3)"><i data-lucide="check-circle-2" style="color:var(--success)"></i>
+    <span><b>✓ Connection successful</b> — mode: <span class="mono">LIVE</span>, account: <span class="mono">acc_Cafe${(d.name||'New').replace(/[^a-z]/gi,'').slice(0,8)}</span><br><span class="mono" style="font-size:11.5px">secret: rzp_sec_•••••••••••• (masked)</span></span></div>`
+   :`<div class="field"><label class="lbl">Razorpay Key Secret <span class="req">*</span></label><div class="inp-wrap"><input class="inp mono" type="password" id="wRzpSec" placeholder="••••••••••••••••">
+     <button class="inp-eye" data-action="eye" data-for="wRzpSec" aria-label="Toggle secret visibility"><i data-lucide="eye"></i></button></div></div>
+     <button class="btn primary" data-action="w-verify" id="wVerifyBtn"><i data-lucide="shield-check"></i>Verify Credentials</button>`}`,
+ `<div class="kv" style="grid-template-columns:180px 1fr;gap:12px 20px">
+   ${[['Cafe',(d.name||'—')+' · '+(d.city||'')],['Slug','/'+(d.slug||'')],['Contact',(d.email||'—')+' · '+(d.phone||'')],['Owner',(d.owner||'—')+' · '+(d.ownerEmail||'')],
+     ['Plan',PLANS[d.plan].name+' · '+inr(d.billing==='monthly'?PLANS[d.plan].pm:PLANS[d.plan].py)+' / '+(d.billing==='monthly'?'month':'year')],
+     ['Razorpay',d.verified?'✓ Verified (LIVE)':'⚠ Not verified'],['Trial',PLANS[d.plan].trial+' days free'],['Go-live','Immediately after creation']]
+    .map(r=>`<dt>${r[0]}</dt><dd style="text-align:left;font-family:var(--ui);font-size:13.5px">${r[1]}</dd>`).join('')}</div>
+  <div class="info-note note-info mt"><i data-lucide="sparkles"></i><span>Creating this cafe will also provision its subdomain, default menu template, and a Razorpay subscription link for the <b>${PLANS[d.plan].name}</b> plan.</span></div>`][s-1];
+ return `<div class="page-hd"><div><h2>Add Cafe</h2><div class="sub">Onboard a new tenant in five steps.</div></div></div>
+  <div class="card"><div class="card-bd">
+   <div class="steps">${steps.map((st,i)=>`<div class="step ${s===i+1?'on':s>i+1?'done':''}"><span class="n">${s>i+1?'✓':i+1}</span><b>${st}</b></div>`).join('')}</div>
+   <div style="max-width:760px">${body}</div>
+   <hr class="divider"><div class="row" style="justify-content:space-between">
+     <button class="btn" data-action="w-back" ${s===1?'disabled':''}><i data-lucide="chevron-left"></i>Back</button>
+     ${s<5?`<button class="btn primary" data-action="w-next">Continue<i data-lucide="chevron-right"></i></button>`
+       :`<button class="btn primary" data-action="w-create"><i data-lucide="check"></i>Create Cafe</button>`}</div></div></div>`}
+
+const vRequests=()=>{setTimeout(()=>{window._reqDt=dataTable($('#reqTable'),{rows:REQUESTS,id:'id',per:10,
+ cols:[{label:'Cafe',render:r=>`<div class="row" style="gap:10px">${avatar(r.cafe)}<div><div class="cell-main">${r.cafe}</div><div class="cell-sub">${r.plan} plan requested</div></div></div>`},
+ {label:'Owner',render:r=>r.owner},{label:'Email',render:r=>`<span class="cell-id">${r.email}</span>`},
+ {label:'Requested Plan',render:r=>`<span class="chip" style="color:${PLAN_CLR[r.plan]}">${PLANS[r.plan].name}</span>`},
+ {label:'Requested',val:r=>+r.date,render:r=>timeAgo(r.date)},
+ {label:'Verification',render:r=>r.ver.map(v=>`<span class="chip" style="margin:1px">${v.includes('✓')?'✓':'…'} ${v.replace(' ✓','')}</span>`).join(' ')},
+ {label:'Status',render:()=>badge('pending_setup')},
+ {label:'Actions',render:r=>`<div class="row"><button class="btn sm primary" data-action="req-approve" data-id="${r.id}"><i data-lucide="check"></i>Approve</button>
+  <button class="btn sm danger" data-action="req-reject" data-id="${r.id}"><i data-lucide="x"></i></button>
+  <button class="btn sm iconb" aria-label="View" data-action="req-view" data-id="${r.id}"><i data-lucide="eye"></i></button></div>`}],
+ emptyIcon:'inbox',emptyMsg:'All requests processed. 🎉'})},40);
+ return `<div class="page-hd"><div><h2>Cafe Requests</h2><div class="sub">${REQUESTS.length} applications awaiting approval.</div></div>
+  <div class="row"><span class="bdg b-a">SLA: respond within 24h</span></div></div><div class="card"><div id="reqTable"></div></div>`};
+
+const vSuspended=()=>{setTimeout(()=>{window._susDt=dataTable($('#susTable'),{rows:CAFES.filter(c=>c.status==='suspended'),id:'id',
+ cols:cafeCols(false).filter(c=>c.label!==''),onRow:c=>location.hash='#/cafe/'+c.id,click:true,
+ emptyIcon:'party-popper',emptyMsg:'No suspended cafes right now.'})},40);
+ return `<div class="page-hd"><div><h2>Suspended Cafes</h2><div class="sub">Tenants locked out for policy or payment reasons.</div></div></div>
+ <div class="card"><div id="susTable"></div></div>`};
+
+const vPlans=()=>`<div class="page-hd"><div><h2>Subscription Plans</h2><div class="sub">Catalogue powering Razorpay subscriptions.</div></div>
+  <a class="btn primary" href="#/plans/new"><i data-lucide="plus"></i>New Plan</a></div>
+ <div class="plan-grid">${PLAN_ORDER.map(pid=>{const p=PLANS[pid];
+  return `<div class="plan-card ${p.pop?'pop':''}"><div class="row" style="justify-content:space-between"><b style="font-size:16px">${p.name}</b>
+   <span class="chip mono" style="color:${PLAN_CLR[pid]}">plan_${pid.slice(0,4)}X2</span></div>
+   <div class="plan-price">${pid==='enterprise'?inr(p.pm):inr(p.pm)}<small> / month</small></div>
+   <div class="hint">or ${inr(p.py)} / year</div>
+   <ul class="plan-feat">${p.feats.slice(0,5).map(f=>`<li><i data-lucide="check"></i>${f}</li>`).join('')}</ul>
+   <div class="plan-stats"><div><b>${INRF.format(p.subs)}</b><span>cafes</span></div><div><b>${inrL(p.rev)}</b><span>MRR</span></div><div><b>${p.conv}</b><span>trial→paid</span></div></div>
+   <div class="row mt" style="justify-content:flex-end"><a class="btn sm" href="#/plans/edit/${pid}"><i data-lucide="pencil"></i>Edit</a>
+   <button class="btn sm" data-action="dup-plan" data-id="${pid}"><i data-lucide="copy"></i>Duplicate</button>
+   <button class="btn sm ghost" data-action="archive-plan" data-id="${pid}"><i data-lucide="archive"></i></button></div></div>`}).join('')}</div>
+ <div class="card mt-lg"><div class="card-hd"><h3>Plan performance</h3><div class="hint">Subscriptions per plan · last 12 months</div></div>
+ <div class="card-bd">${barSVG({labels:MONTHS,data:MONTHS.map((_,i)=>380+Math.floor(i*40+rnd(i)*60)),color:'#2563EB'})}</div></div>`;
+
+const vPlanForm=(pid)=>{const p=pid&&PLANS[pid]?PLANS[pid]:null;const T=[['analytics','Advanced Analytics',p?['growth','pro','enterprise'].includes(p.id):true],
+ ['staff_mgmt','Staff Management',true],['inventory','Inventory',p?p.id!=='starter':false],['loyalty','Customer Loyalty',p?p.id==='pro'||p.id==='enterprise':false],
+ ['branding','Custom Branding',p?p.id==='enterprise':false],['api','API Access',p?['pro','enterprise'].includes(p.id):false],['support','Priority Support',p?['pro','enterprise'].includes(p.id):false]];
+ return `<div class="page-hd"><div><h2>${p?'Edit Plan — '+p.name:'Create Plan'}</h2><div class="sub">${p?'Changes apply to new signups immediately; existing cafes keep their terms.':'Define pricing, limits and feature gates.'}</div></div>
+  <a class="btn" href="#/plans"><i data-lucide="chevron-left"></i>Back to Plans</a></div>
+ <div class="grid g-1-2"><div class="card"><div class="card-hd"><h3>Basics</h3></div><div class="card-bd">
+   <div class="field"><label class="lbl">Plan Name <span class="req">*</span></label><input class="inp" id="pName" value="${p?p.name:''}" placeholder="e.g. Growth"></div>
+   <div class="field"><label class="lbl">Description</label><textarea class="txt" id="pDesc" placeholder="One-line pitch shown at checkout">${p?'Best value for multi-outlet cafes scaling up.':''}</textarea></div>
+   <div class="fgrid"><div class="field"><label class="lbl">Monthly Price (₹) <span class="req">*</span></label><input class="inp mono" id="pM" type="number" value="${p?p.pm:''}"></div>
+   <div class="field"><label class="lbl">Yearly Price (₹)</label><input class="inp mono" id="pY" type="number" value="${p?p.py:''}"></div>
+   <div class="field"><label class="lbl">Trial Days</label><input class="inp mono" type="number" value="${p?p.trial:14}"></div>
+   <div class="field"><label class="lbl">Max Outlets <span class="hint">(-1 = ∞)</span></label><input class="inp mono" type="number" value="${p?p.outlets:1}"></div>
+   <div class="field"><label class="lbl">Max Staff</label><input class="inp mono" type="number" value="${p?p.staff:3}"></div>
+   <div class="field"><label class="lbl">Max Orders / mo</label><input class="inp mono" type="number" value="${p?p.orders:5000}"></div>
+   <div class="field"><label class="lbl">Storage Limit</label><input class="inp mono" value="${p?p.storage:'2 GB'}"></div></div></div></div>
+  <div><div class="card"><div class="card-hd"><h3>Feature Toggles</h3></div><div class="card-bd">
+   ${T.map(([k,l,on])=>`<div class="split"><span style="font-weight:600">${l}</span><label class="sw"><input type="checkbox" ${on?'checked':''} data-feat="${k}"><i></i></label></div>`).join('')}</div></div>
+  <div class="card mt"><div class="card-hd"><h3><i data-lucide="credit-card" style="width:15px;display:inline-block;vertical-align:-2px"></i> Razorpay Configuration</h3></div><div class="card-bd">
+   <div class="field"><label class="lbl">Razorpay Plan ID</label><input class="inp mono" value="${p?'plan_'+pid+'2026X':''}" placeholder="plan_XXXXXXXX" ${p?'':'id="rzpPlan"'}>
+   <div class="hint">Create the plan in Razorpay first, then paste its ID. Billing is anchored to the customer's UPI mandate / card.</div></div>
+   <div class="split"><span>Auto-collect on renewal</span><label class="sw"><input type="checkbox" checked><i></i></label></div>
+   <div class="split"><span>Prorate mid-cycle upgrades</span><label class="sw"><input type="checkbox" checked><i></i></label></div>
+   <div class="split"><span>Send payment receipts by email</span><label class="sw"><input type="checkbox" checked><i></i></label></div></div></div>
+  <div class="row mt" style="justify-content:flex-end"><a class="btn" href="#/plans">Cancel</a><button class="btn primary" data-action="save-plan"><i data-lucide="check"></i>Save Plan</button></div></div></div>`};
+
+const vSubs=()=>{setTimeout(()=>{const rows=CAFES.filter(c=>['active','payment_failed'].includes(c.status));
+ window._subDt=dataTable($('#subTable'),{rows,id:'id',per:10,click:true,onRow:c=>location.hash='#/cafe/'+c.id,
+ cols:[{label:'Cafe',key:'name',sort:1,render:c=>`<div class="row" style="gap:10px">${avatar(c.name)}<div><div class="cell-main">${c.name}</div><div class="cell-sub">${c.city}</div></div></div>`},
+ {label:'Plan',key:'plan',sort:1,render:c=>`<span class="chip" style="color:${PLAN_CLR[c.plan]}">${PLANS[c.plan].name}</span>`},
+ {label:'Subscription ID',render:c=>`<span class="cell-id">${c.subId}</span>`},
+ {label:'Amount',val:c=>PLANS[c.plan].pm,render:c=>`<span class="mono">${inr(PLANS[c.plan][c.cycle==='yearly'?'py':'pm'])}</span>`},
+ {label:'Cycle',render:c=>badge(c.cycle)},
+ {label:'Start',val:c=>+c.created,render:c=>fmtDate(c.created)},
+ {label:'Next Billing',render:c=>fmtDate(daysAhead(3+(hue(c.id)%22)))},
+ {label:'Payment',render:c=>badge(c.status==='payment_failed'?'failed':'paid')},
+ {label:'Status',key:'status',sort:1,render:c=>badge(c.status)}]});
+ const apply=()=>{const pl=$('#sPlan').value,st=$('#sSt').value,cy=$('#sCy').value;
+   window._subDt.setRows(rows.filter(c=>(pl==='all'||c.plan===pl)&&(st==='all'||c.status===st)&&(cy==='all'||c.cycle===cy)))};
+ ['#sPlan','#sSt','#sCy'].forEach(s=>$(s).onchange=apply)},40);
+ return `<div class="page-hd"><div><h2>Active Subscriptions</h2><div class="sub">SaaS billing — this is platform revenue (not cafe GMV).</div></div>
+   <span class="bdg b-g">MRR ${inr(842500)}</span></div>
+ <div class="card"><div class="toolbar">
+   <select class="sel" id="sPlan"><option value="all">All plans</option>${PLAN_ORDER.map(p=>`<option value="${p}">${PLANS[p].name}</option>`).join('')}</select>
+   <select class="sel" id="sSt"><option value="all">All statuses</option><option value="active">Active</option><option value="payment_failed">Payment failed</option></select>
+   <select class="sel" id="sCy"><option value="all">Any cycle</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+   <span class="spacer"></span><span class="muted" style="font-size:12px">${CAFES.filter(c=>['active','payment_failed'].includes(c.status)).length} subscriptions</span></div>
+ <div id="subTable"></div></div>`};
+
+const vTrials=()=>{setTimeout(()=>{const rows=CAFES.filter(c=>c.status==='trial').concat([{...CAFES[5],id:'c99',name:'Trailblazer Brews',owner:'Test Owner',plan:'growth',trialDaysLeft:1}]);
+ window._trDt=dataTable($('#trTable'),{rows,id:'id',per:10,rowCls:r=>r.trialDaysLeft<=3?'hl-warn':'',
+ cols:[{label:'Cafe',render:c=>`<div class="row" style="gap:10px">${avatar(c.name)}<div class="cell-main">${c.name}</div></div>`},
+ {label:'Plan',render:c=>`<span class="chip" style="color:${PLAN_CLR[c.plan]}">${PLANS[c.plan].name}</span>`},
+ {label:'Trial Start',render:c=>fmtDate(daysAgo(14-(c.trialDaysLeft||3)))},
+ {label:'Trial End',render:c=>fmtDate(daysAhead(c.trialDaysLeft||3))},
+ {label:'Days Left',val:c=>c.trialDaysLeft||0,sort:1,render:c=>{const d=c.trialDaysLeft||0;return `<span class="bdg ${d<=1?'b-r':d<=3?'b-a':'b-b'}">${d} day${d===1?'':'s'}</span>`}},
+ {label:'Owner',render:c=>c.owner},{label:'Status',render:()=>badge('trial')},
+ {label:'Actions',render:c=>`<div class="row"><button class="btn sm primary" data-action="trial-convert" data-id="${c.id}"><i data-lucide="zap"></i>Convert</button>
+  <button class="btn sm" data-action="trial-extend" data-id="${c.id}"><i data-lucide="timer"></i>Extend</button>
+  <button class="btn sm iconb" data-action="contact-owner" data-id="${c.id}" aria-label="Contact owner"><i data-lucide="mail"></i></button></div>`}],
+ emptyIcon:'timer',emptyMsg:'No active trials.'})},40);
+ return `<div class="page-hd"><div><h2>Trials</h2><div class="sub">Prospects evaluating CafeOS. Convert before they cool off.</div></div>
+  <div class="row"><button class="btn sm soft" data-action="trial-filter" data-v="0">Ending today</button>
+  <button class="btn sm soft" data-action="trial-filter" data-v="3">Next 3 days</button>
+  <button class="btn sm soft" data-action="trial-filter" data-v="7">This week</button>
+  <button class="btn sm primary" data-action="trial-filter" data-v="all">All trials</button></div></div>
+ <div class="card"><div id="trTable"></div></div>`};
+
+const vFailed=()=>{setTimeout(()=>{const rows=TXNS.filter(t=>t.st==='failed').map((t,i)=>({...t,retry:daysAhead(i%4+1),recovered:false}));
+ window._fpDt=dataTable($('#fpTable'),{rows,id:'id',
+ cols:[{label:'Cafe',render:t=>`<div class="row" style="gap:10px">${avatar(t.cafe.name)}<div class="cell-main">${t.cafe.name}</div></div>`},
+ {label:'Invoice',render:t=>`<span class="cell-id">${t.inv}</span>`},
+ {label:'Amount',val:t=>t.amount,sort:1,render:t=>`<span class="mono" style="font-weight:600">${inr(t.amount)}</span>`},
+ {label:'Failure Reason',render:t=>`<span class="chip">${({insufficient_funds:'Insufficient funds',card_expired:'Card expired',mandate_failed:'UPI mandate failed',bank_down:'Bank downtime'})[['insufficient_funds','card_expired','mandate_failed','bank_down'][hue(t.id)%4]]}</span>`},
+ {label:'Failed',val:t=>+t.date,sort:1,render:t=>timeAgo(t.date)},
+ {label:'Auto-retry',render:t=>t.recovered?'—':fmtDate(t.retry)},
+ {label:'Status',render:t=>t.recovered?badge('paid'):badge('failed')},
+ {label:'Actions',render:t=>`<div class="row"><button class="btn sm primary" data-action="pay-retry" data-id="${t.id}"><i data-lucide="refresh-cw"></i>Retry</button>
+  <button class="btn sm iconb" data-action="contact-owner" data-id="${t.cafe.id}" aria-label="Contact"><i data-lucide="mail"></i></button>
+  <a class="btn sm iconb" href="#/cafe/${t.cafe.id}" aria-label="Subscription"><i data-lucide="credit-card"></i></a></div>`}]});
+ window._fpRows=rows},40);
+ return `<div class="page-hd"><div><h2>Failed Payments</h2><div class="sub">Recovery queue — every retry is attempted via Razorpay Smart Retries.</div></div></div>
+ <div class="kpis mb">
+  ${kpi({icon:'alert-circle',color:'var(--danger)',soft:'var(--danger-soft)',label:'Failed Today',value:3,spark:[2,3,1,3,2,4,3],sparkC:'#DC2626'})}
+  ${kpi({icon:'calendar',color:'var(--warning)',soft:'var(--warning-soft)',label:'Failed This Week',value:9,spark:[5,6,8,7,9,8,9],sparkC:'#D97706'})}
+  ${kpi({icon:'x-circle',color:'var(--slate)',soft:'var(--slate-soft)',label:'Total Failed (30d)',value:27,spark:[9,8,8,7,7,6,5],sparkC:'#64748B'})}
+  ${kpi({icon:'trending-up',color:'var(--success)',soft:'var(--success-soft)',label:'Recovery Rate',value:68,f:'n',change:5.2,vs:'₹26,100 recovered this week',spark:[5,5,6,6,6,7,7],sparkC:'#16A34A'})}
+ </div><div class="card"><div id="fpTable"></div></div>`};
+
+const vRevenue=()=>{const R={
+ '7':{mrr:[8.02,8.1,8.18,8.24,8.3,8.36,8.42].map(v=>v*1e5),lbl:['12','13','14','15','16','17','18 Aug'],tot:198400,nv:[9200,11400,8800,13100,10200,12800,14900]},
+ '30':{mrr:MRR12.slice(8),lbl:['May','Jun','Jul','Aug'].slice(0),tot:842500,nv:[61,72,58,84].map(v=>v*1e3)},
+ '90':{mrr:MRR12.slice(6),lbl:MONTHS.slice(6,12),tot:2387000,nv:[181,212,198,244,228,262].map(v=>v*1e3)},
+ '12m':{mrr:MRR12,lbl:MONTHS,tot:8642000,nv:REGS.map(v=>v*1e3)}};
+ const draw=(key)=>{const r=R[key]||R['30'];
+  $('#revMRR').innerHTML=lineSVG({labels:r.lbl.length?r.lbl:['12','13','14','15','16','17','18 Aug'],series:[{name:'MRR',data:r.mrr,color:'#2563EB',fill:'blu'}],yFmt:inrL});
+  $('#revNew').innerHTML=barSVG({labels:r.lbl.length?r.lbl:['W1','W2','W3','W4'],data:r.nv,color:'#16A34A',yFmt:inrL});icons();countUp()};
+ window._revDraw=draw;setTimeout(()=>draw('30'),60);
+ return `<div class="page-hd"><div><h2>Revenue Overview</h2><div class="sub">SaaS subscription revenue only. Cafe GMV lives under Orders.</div></div>
+  <div class="row">${['7|7 days','30|30 days','90|90 days','12m|12 months'].map(o=>{const[v,l]=o.split('|');return `<button class="btn sm ${v==='30'?'primary':'soft'}" data-action="rev-range" data-v="${v}">${l}</button>`}).join('')}
+  <button class="btn sm soft" data-action="rev-custom"><i data-lucide="calendar"></i>Custom</button></div></div>
+ <div class="kpis mb">
+  ${kpi({icon:'indian-rupee',color:'var(--primary)',soft:'var(--primary-soft)',label:'MRR',value:842500,f:'inr',change:14.8})}
+  ${kpi({icon:'trending-up',color:'var(--success)',soft:'var(--success-soft)',label:'ARR',value:1.011e7,f:'cr',change:14.8})}
+  ${kpi({icon:'wallet',color:'var(--info)',soft:'var(--info-soft)',label:'Total Revenue (12m)',value:8642000,f:'l',change:21.4})}
+  ${kpi({icon:'circle-dollar-sign',color:'var(--success)',soft:'var(--success-soft)',label:'Net Revenue',value:8124000,f:'l',change:20.9})}
+  ${kpi({icon:'undo-2',color:'var(--violet)',soft:'var(--violet-soft)',label:'Refunds',value:64200,f:'inr',change:-12.1})}
+  ${kpi({icon:'alert-triangle',color:'var(--danger)',soft:'var(--danger-soft)',label:'Failed (uncollected)',value:38400,f:'inr',change:-8.1})}
+  ${kpi({icon:'store',color:'var(--warning)',soft:'var(--warning-soft)',label:'Avg Revenue / Cafe',value:826,f:'inr',change:3.9})}
+  ${kpi({icon:'infinity',color:'var(--slate)',soft:'var(--slate-soft)',label:'Customer LTV',value:28400,f:'inr',change:6.4})}
+ </div>
+ <div class="grid g-2-1">
+  <div class="card"><div class="card-hd"><h3>MRR trajectory</h3><div class="row"><span class="chip">MRR</span><span class="chip">ARR = MRR × 12</span></div></div><div class="card-bd" id="revMRR"></div></div>
+  <div class="card"><div class="card-hd"><h3>Revenue by Plan</h3></div><div class="card-bd">${(()=>{const items=PLAN_ORDER.map(p=>({label:PLANS[p].name,value:PLANS[p].rev,color:PLAN_CLR[p]}));
+    return donutSVG({items,centerTop:inrL(items.reduce((a,b)=>a+b.value,0)),centerSub:'monthly'})+legend(items,items.reduce((a,b)=>a+b.value,0))})()}</div></div>
+ </div>
+ <div class="grid g2 mt">
+  <div class="card"><div class="card-hd"><h3>New vs Existing Revenue</h3><div class="hint">New = expansions + new signups</div></div><div class="card-bd" id="revNew"></div></div>
+  <div class="card"><div class="card-hd"><h3>Revenue by Month</h3></div><div class="card-bd">${barSVG({labels:MONTHS,data:MRR12,color:'#0284C7',yFmt:inrL})}</div></div></div>`};
+
+const vTxns=()=>{setTimeout(()=>{const apply=debounce(()=>{const q=$('#txQ').value.toLowerCase(),st=$('#txSt').value,mt=$('#txMt').value,rg=$('#txRg').value;
+   window._txDt.setRows(TXNS.filter(t=>(!q||t.id.toLowerCase().includes(q)||t.cafe.name.toLowerCase().includes(q)||t.payId.toLowerCase().includes(q))
+    &&(st==='all'||t.st===st)&&(mt==='all'||t.method===mt)&&(rg==='all'||+t.date>+daysAgo(+rg))))},200);
+ window._txDt=dataTable($('#txTable'),{rows:TXNS,id:'id',per:10,
+ cols:[{label:'Transaction',render:t=>`<span class="cell-id" style="font-weight:600">${t.id}</span>`},
+ {label:'Cafe',render:t=>t.cafe.name},{label:'Invoice',render:t=>`<span class="cell-id">${t.inv}</span>`},
+ {label:'Amount',key:'amount',sort:1,val:t=>t.amount,render:t=>`<span class="mono" style="font-weight:600">${inr(t.amount)}</span>`},
+ {label:'Method',render:t=>`<span class="chip">${t.method}</span>`},
+ {label:'Razorpay Payment ID',render:t=>`<span class="cell-id">${t.payId}</span>`},
+ {label:'Status',key:'st',sort:1,render:t=>badge(t.st)},
+ {label:'Date',key:'date',sort:1,val:t=>+t.date,render:t=>fmtDate(t.date)}],
+ emptyIcon:'arrow-left-right',emptyMsg:'No transactions match.'});
+ ['#txQ'].forEach(s=>$(s).oninput=apply);['#txSt','#txMt','#txRg'].forEach(s=>$(s).onchange=apply);
+ $('#txExport').onclick=()=>window._txDt.export('transactions.csv',t=>[t.id,t.cafe.name,t.inv,t.amount,t.method,t.payId,t.st,fmtDate(t.date)])},40);
+ return `<div class="page-hd"><div><h2>Transactions</h2><div class="sub">Subscription charges collected by the platform via Razorpay.</div></div></div>
+ <div class="card"><div class="toolbar">
+  <div class="inp-wrap" style="flex:1;max-width:280px"><input class="inp" id="txQ" placeholder="Search TXN, cafe, payment ID…" style="padding-left:34px"><i data-lucide="search" style="position:absolute;left:11px;top:11px;width:15px;height:15px;color:var(--text-3)"></i></div>
+  <select class="sel" id="txSt"><option value="all">All statuses</option><option value="paid">Paid</option><option value="failed">Failed</option><option value="pending">Pending</option><option value="refunded">Refunded</option></select>
+  <select class="sel" id="txMt"><option value="all">All methods</option>${METHODS.map(m=>`<option>${m}</option>`).join('')}</select>
+  <select class="sel" id="txRg"><option value="all">Any date</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select>
+  <span class="spacer"></span><button class="btn" id="txExport"><i data-lucide="download"></i>Export CSV</button></div>
+ <div id="txTable"></div></div>`};
+
+const vInvoices=()=>{setTimeout(()=>{window._invDt=dataTable($('#invTable'),{rows:INVOICES,id:'id',per:10,
+ cols:[{label:'Invoice',render:t=>`<span class="cell-id" style="font-weight:600">${t.id}</span>`},
+ {label:'Cafe',render:t=>t.cafe.name},
+ {label:'Amount',val:t=>t.amount,sort:1,render:t=>`<span class="mono" style="font-weight:600">${inr(t.amount)}</span>`},
+ {label:'Plan',render:t=>`<span class="chip" style="color:${PLAN_CLR[t.plan]}">${PLANS[t.plan].name}</span>`},
+ {label:'Billing Period',render:t=>t.period},{label:'Due',val:t=>+t.due,sort:1,render:t=>fmtDate(t.due)},
+ {label:'Status',key:'st',sort:1,render:t=>badge(t.st)},
+ {label:'Actions',render:t=>`<div class="row"><button class="btn sm iconb" data-action="inv-view" data-id="${t.id}" aria-label="View"><i data-lucide="eye"></i></button>
+  <button class="btn sm iconb" data-action="inv-dl" data-id="${t.id}" aria-label="Download"><i data-lucide="download"></i></button>
+  <button class="btn sm iconb" data-action="inv-send" data-id="${t.id}" aria-label="Send"><i data-lucide="send"></i></button>
+  <button class="btn sm iconb" data-action="inv-refund" data-id="${t.id}" aria-label="Refund" ${t.st!=='paid'?'disabled':''}><i data-lucide="undo-2"></i></button></div>`}]});},40);
+ return `<div class="page-hd"><div><h2>Invoices</h2><div class="sub">GST-compliant invoices issued to cafes.</div></div></div>
+ <div class="card"><div id="invTable"></div></div>`};
+
+const vOrders=()=>{setTimeout(()=>{window._ordDt=dataTable($('#ordTable'),{rows:ORDERS,id:'id',per:10,
+ cols:[{label:'Order ID',render:o=>`<span class="cell-id" style="font-weight:600">${o.id}</span>`},
+ {label:'Cafe',render:o=>`<div class="row" style="gap:8px">${avatar(o.cafe.name)}${o.cafe.name}</div>`},
+ {label:'Customer',render:o=>o.customer},
+ {label:'Amount',key:'amount',sort:1,val:o=>o.amount,render:o=>`<span class="mono">${inr(o.amount)}</span>`},
+ {label:'Payment',render:o=>badge(o.pay)},
+ {label:'Status',key:'st',sort:1,render:o=>badge(o.st)},
+ {label:'Date',key:'date',sort:1,val:o=>+o.date,render:o=>fmtDT(o.date)}]});},40);
+ return `<div class="page-hd"><div><h2>Platform Orders</h2><div class="sub">Customer orders flowing through every cafe.</div></div></div>
+ <div class="info-note note-info mb"><i data-lucide="git-branch"></i><span><b>Two separate money flows.</b> Cafe Customer Payments (GMV below) settle into each cafe's own Razorpay account. SaaS Subscription Payments are the platform's revenue and live under <a href="#/revenue" style="text-decoration:underline;font-weight:700">Revenue</a>. They are never mixed.</span></div>
+ <div class="grid g2 mb">
+   <div class="card" style="border-left:4px solid var(--violet)"><div class="card-bd"><div class="eyebrow" style="color:var(--violet)">Cafe customer payments</div>
+     <div class="kpi-val mt" style="font-size:22px">${inrCr(4.82e7)} <span style="font-size:12px;color:var(--text-3)">GMV · Aug</span></div>
+     <div class="hint mt">Pass-through — belongs to cafes, not CafeOS.</div></div></div>
+   <div class="card" style="border-left:4px solid var(--primary)"><div class="card-bd"><div class="eyebrow" style="color:var(--primary)">SaaS subscription revenue</div>
+     <div class="kpi-val mt" style="font-size:22px">${inr(842500)} <span style="font-size:12px;color:var(--text-3)">MRR · Aug</span></div>
+     <div class="hint mt">Platform revenue → <a href="#/revenue" style="font-weight:700;text-decoration:underline">Revenue Overview</a></div></div></div></div>
+ <div class="kpis mb">
+  ${kpi({icon:'shopping-bag',color:'var(--violet)',soft:'var(--violet-soft)',label:'Total Orders',value:184920,change:11.2})}
+  ${kpi({icon:'sun',color:'var(--warning)',soft:'var(--warning-soft)',label:"Today's Orders",value:6847,change:4.6,vs:'vs yesterday'})}
+  ${kpi({icon:'receipt',color:'var(--primary)',soft:'var(--primary-soft)',label:'Avg Order Value',value:261,f:'inr',change:1.8})}
+  ${kpi({icon:'check-circle-2',color:'var(--success)',soft:'var(--success-soft)',label:'Successful Payments',value:96.4,change:0.6,vs:'% of attempts'})}
+ </div>
+ <div class="card"><div id="ordTable"></div></div>`};
+
+const vProducts=()=>`<div class="page-hd"><div><h2>Products & Categories</h2><div class="sub">Top items across all cafe menus.</div></div>
+ <div class="row"><span class="chip">☕ Beverages</span><span class="chip">🍞 Food</span><span class="chip">🍰 Desserts</span><span class="chip">🥐 Snacks</span></div></div>
+ <div class="card"><div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Product</th><th>Category</th><th>Sold at</th><th>Avg Price</th><th>Orders (30d)</th></tr></thead><tbody>
+ ${PRODUCTS.map(p=>`<tr><td class="cell-main">${p[0]}</td><td><span class="chip">${p[1]}</span></td><td class="mono">${p[2]} cafes</td><td class="mono">${inr(p[3])}</td><td class="mono" style="font-weight:600">${INRF.format(p[4])}</td></tr>`).join('')}</tbody></table></div></div>`;
+
+const vStaff=()=>`<div class="page-hd"><div><h2>Staff — Platform View</h2><div class="sub">Aggregates across tenants. Individual rosters live on each cafe page.</div></div></div>
+ <div class="kpis mb">${kpi({icon:'users',color:'var(--info)',soft:'var(--info-soft)',label:'Total staff accounts',value:7342,change:6.1})}
+ ${kpi({icon:'user-check',color:'var(--success)',soft:'var(--success-soft)',label:'Active this week',value:5918})}
+ ${kpi({icon:'shield',color:'var(--violet)',soft:'var(--violet-soft)',label:'Distinct roles',value:6})}</div>
+ <div class="card"><div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Cafe</th><th>Plan</th><th>Staff</th><th>Seat limit</th><th>Utilisation</th></tr></thead><tbody>
+ ${CAFES.slice(0,10).map(c=>{const lim=PLANS[c.plan].staff,pct=lim===-1?Math.min(22,c.staffTotal):c.staffTotal/lim*100;
+  return `<tr><td><div class="row" style="gap:8px">${avatar(c.name)}<b style="font-weight:600">${c.name}</b></div></td>
+  <td><span class="chip" style="color:${PLAN_CLR[c.plan]}">${PLANS[c.plan].name}</span></td><td class="mono">${c.staffTotal}</td>
+  <td class="mono">${lim===-1?'∞':lim}</td><td><div class="pline"><div class="pbar" style="flex:1"><div class="pfill ${pct>90?'danger':pct>70?'warn':'ok'}" style="width:${Math.min(100,pct)}%"></div></div><span class="mono muted">${lim===-1?'—':Math.round(pct)+'%'}</span></div></td></tr>`}).join('')}</tbody></table></div></div>`;
+
+const vUsage=()=>{const near=CAFES.filter(c=>PLANS[c.plan].orders!==-1).map(c=>({...c,pct:60+rnd(hue(c.id)) * 40})).sort((a,b)=>b.pct-a.pct).slice(0,5);
+ return `<div class="page-hd"><div><h2>Usage & Limits</h2><div class="sub">Platform-wide consumption and tenants approaching their caps.</div></div></div>
+ <div class="kpis mb">
+  ${kpi({icon:'shopping-bag',color:'var(--violet)',soft:'var(--violet-soft)',label:'Orders (30d)',value:184920,change:11.2})}
+  ${kpi({icon:'smile',color:'var(--info)',soft:'var(--info-soft)',label:'Customers served',value:96410,change:9.4})}
+  ${kpi({icon:'users',color:'var(--success)',soft:'var(--success-soft)',label:'Staff accounts',value:7342,change:6.1})}
+  ${kpi({icon:'package',color:'var(--warning)',soft:'var(--warning-soft)',label:'Products listed',value:48210,change:4.2})}
+  ${kpi({icon:'hard-drive',color:'var(--danger)',soft:'var(--danger-soft)',label:'Storage used',value:1.9,f:'n',change:8.8,vs:'TB of 5 TB'})}
+  ${kpi({icon:'activity',color:'var(--primary)',soft:'var(--primary-soft)',label:'API requests (24h)',value:2.4e6,change:12.9})}
+ </div>
+ <div class="grid g2 mb">
+  <div class="card"><div class="card-hd"><h3>Usage growth — API requests</h3></div><div class="card-bd">${lineSVG({labels:MONTHS,series:[{name:'API',data:MONTHS.map((_,i)=>(1.1+i*.13+rnd(i)*.15)*1e6),color:'#2563EB',fill:'blu'}],yFmt:v=>(v/1e6).toFixed(1)+'M'})}</div></div>
+  <div class="card"><div class="card-hd"><h3>Storage consumption</h3></div><div class="card-bd">${barSVG({labels:MONTHS,data:MONTHS.map((_,i)=>.8+i*.1),color:'#DC2626',yFmt:v=>v.toFixed(1)+' TB'})}</div></div></div>
+ <div class="card"><div class="card-hd"><h3>Cafes approaching limits</h3><span class="bdg b-a">${near.length} at risk</span></div>
+ <div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Cafe</th><th>Plan</th><th>Orders usage</th><th>Status</th><th></th></tr></thead><tbody>
+ ${near.map(c=>`<tr class="${c.pct>95?'hl-warn':''}"><td><div class="row" style="gap:8px">${avatar(c.name)}<b style="font-weight:600">${c.name}</b></div></td>
+  <td><span class="chip" style="color:${PLAN_CLR[c.plan]}">${PLANS[c.plan].name}</span></td>
+  <td style="min-width:220px"><div class="pline"><div class="pbar" style="flex:1"><div class="pfill ${c.pct>95?'danger':c.pct>85?'warn':'ok'}" style="width:${c.pct}%"></div></div>
+  <span class="mono muted">${INRF.format(Math.round(PLANS[c.plan].orders*c.pct/100))} / ${INRF.format(PLANS[c.plan].orders)}</span></div></td>
+  <td>${c.pct>95?badge('urgent'):badge('high')}</td>
+  <td><button class="btn sm" data-action="nudge" data-id="${c.id}"><i data-lucide="mail"></i>Nudge upgrade</button></td></tr>`).join('')}</tbody></table></div></div>`};
+
+const vSupport=()=>{setTimeout(()=>{window._tkDt=dataTable($('#tkTable'),{rows:TICKETS,id:'id',per:10,click:true,onRow:t=>openTicket(t.id),
+ cols:[{label:'Ticket',render:t=>`<span class="cell-id" style="font-weight:600">${t.id}</span>`},
+ {label:'Cafe',render:t=>`<div class="row" style="gap:8px">${avatar(t.cafe.name)}${t.cafe.name}</div>`},
+ {label:'Subject',render:t=>`<span style="font-weight:600">${t.subject}</span>`},
+ {label:'Priority',key:'pr',sort:1,val:t=>['low','medium','high','urgent'].indexOf(t.pr),render:t=>badge(t.pr)},
+ {label:'Assigned',render:t=>t.admin==='—'?'<span class="faint">Unassigned</span>':t.admin},
+ {label:'Status',key:'st',sort:1,render:t=>badge(t.st)},
+ {label:'Created',val:t=>+t.created,sort:1,render:t=>timeAgo(t.created)},
+ {label:'Updated',render:t=>`<span class="muted">${timeAgo(t.updated)}</span>`}]});},40);
+ return `<div class="page-hd"><div><h2>Support Tickets</h2><div class="sub">Conversations between cafes and the platform team.</div></div>
+  <div class="row">${['open','in_progress','waiting','resolved'].map(s=>`<span class="chip">${TICKETS.filter(t=>t.st===s).length} ${STATUS[s][0]}</span>`).join('')}</div></div>
+ <div class="card"><div id="tkTable"></div></div>`};
+
+const vAnnounce=()=>`<div class="page-hd"><div><h2>Announcements</h2><div class="sub">Broadcast updates to cafe owners.</div></div></div>
+ <div class="grid g-1-2">
+ <div class="card"><div class="card-hd"><h3>Compose</h3></div><div class="card-bd">
+   <div class="field"><label class="lbl">Title <span class="req">*</span></label><input class="inp" id="anTitle" placeholder="e.g. New feature: table QR ordering"><div class="ferr">Title required</div></div>
+   <div class="field"><label class="lbl">Message <span class="req">*</span></label><textarea class="txt" id="anMsg" placeholder="What changed, when, and what cafes should do…"></textarea><div class="ferr">Message required</div></div>
+   <div class="fgrid"><div class="field"><label class="lbl">Type</label><select class="sel" id="anType"><option>Info</option><option>Feature</option><option>Billing</option><option>Maintenance</option></select></div>
+   <div class="field"><label class="lbl">Target audience</label><select class="sel" id="anAud"><option>All Cafes</option><option>Active Cafes</option><option>Trial Users</option><option>Starter</option><option>Growth</option><option>Pro</option><option>Suspended</option></select></div>
+   <div class="field"><label class="lbl">Schedule</label><input class="inp" type="datetime-local" id="anWhen"></div>
+   <div class="field"><label class="lbl">CTA label</label><input class="inp" id="anCta" placeholder="Learn more →"></div></div>
+   <div class="row" style="justify-content:flex-end"><button class="btn soft" data-action="an-draft">Save Draft</button>
+   <button class="btn primary" data-action="an-send"><i data-lucide="send"></i>Publish</button></div></div></div>
+ <div class="card"><div class="card-hd"><h3>History</h3><span class="chip">${ANNOUNCEMENTS.length} sent/scheduled</span></div>
+  <div class="card-bd" id="anHist">${ANNOUNCEMENTS.map(a=>`<div style="padding:13px 0;border-bottom:1px solid var(--border)">
+   <div class="row" style="justify-content:space-between"><b style="font-size:13.5px">${a.title}</b>${badge(a.st)}</div>
+   <div class="row mt" style="gap:7px"><span class="chip">${a.type}</span><span class="chip"><i data-lucide="users"></i>${a.aud}</span><span class="chip mono">${a.when}</span></div>
+   <p class="muted mt" style="font-size:12.5px">${a.body}</p></div>`).join('')}</div></div></div>`;
+
+const vAdmins=()=>{setTimeout(()=>{window._adDt=dataTable($('#adTable'),{rows:ADMINS,id:'email',
+ cols:[{label:'Admin',render:a=>`<div class="row" style="gap:10px">${avatar(a.name)}<div><div class="cell-main">${a.name}</div><div class="cell-sub">${a.email}</div></div></div>`},
+ {label:'Role',render:a=>`<span class="chip" style="color:${{'Super Admin':'var(--danger)','Finance Admin':'var(--primary)','Support Admin':'var(--info)','Operations Admin':'var(--violet)'}[a.role]}">${a.role}</span>`},
+ {label:'Status',render:a=>badge(a.st)},
+ {label:'Last Login',val:a=>+a.last,sort:1,render:a=>timeAgo(a.last)},
+ {label:'Created',render:a=>fmtDate(a.created)},
+ {label:'Actions',render:a=>`<div class="row"><button class="btn sm iconb" data-action="ad-edit" data-id="${a.email}" aria-label="Edit"><i data-lucide="pencil"></i></button>
+  <button class="btn sm iconb" data-action="ad-reset" data-id="${a.email}" aria-label="Reset password"><i data-lucide="key-round"></i></button>
+  <button class="btn sm ${a.st==='enabled'?'danger':'primary'}" data-action="ad-toggle" data-id="${a.email}">${a.st==='enabled'?'Disable':'Enable'}</button></div>`}]});},40);
+ return `<div class="page-hd"><div><h2>Admin Users</h2><div class="sub">Who can act on the platform — every action is audited.</div></div>
+  <button class="btn primary" data-action="ad-add"><i data-lucide="plus"></i>Add Admin</button></div>
+ <div class="grid g4 mb">${Object.entries(ROLE_DESC).map(([r,d])=>`<div class="card"><div class="card-bd"><b style="font-size:13.5px">${r}</b><p class="muted mt" style="font-size:12px">${d}</p></div></div>`).join('')}</div>
+ <div class="card"><div id="adTable"></div></div>`};
+
+const vRoles=()=>{const MODS=['Dashboard','Cafes','Subscriptions','Revenue','Transactions','Orders','Support','Announcements','Admin Users','Audit Logs','System Settings'];
+ const ACTS=['View','Create','Edit','Delete','Export'];
+ const PROF={'Finance Admin':{Revenue:1,Transactions:1,Subscriptions:1,Dashboard:1},'Support Admin':{Cafes:1,Support:1,Announcements:1,Dashboard:1,Orders:1},'Operations Admin':{Cafes:1,Orders:1,Dashboard:1,Subscriptions:1}};
+ window._role='Finance Admin';
+ const matrix=(role)=>MODS.map(m=>{const all=role==='Super Admin'||PROF[role]?.[m];
+   return `<tr><td style="font-weight:600">${m}</td>${ACTS.map((a,ai)=>{const on=role==='Super Admin'||(all&&(ai===0||ai===4||rnd(hue(m+role)+ai)>.4));
+   return `<td><label class="sw"><input type="checkbox" ${on?'checked':''} ${role==='Super Admin'?'disabled':''} data-perm="${m}:${a}"><i></i></label></td>`}).join('')}</tr>`}).join('');
+ window._roleMatrix=matrix;
+ return `<div class="page-hd"><div><h2>Roles & Permissions</h2><div class="sub">Least-privilege by default. Super Admin is locked.</div></div>
+  <button class="btn primary" data-action="roles-save"><i data-lucide="check"></i>Save Matrix</button></div>
+ <div class="card"><div class="toolbar">${['Super Admin','Finance Admin','Support Admin','Operations Admin'].map(r=>`<button class="btn sm ${r==='Finance Admin'?'primary':'soft'}" data-action="role-tab" data-v="${r}">${r}</button>`).join('')}</div>
+ <div class="table-scroll"><table class="tbl matrix"><thead><tr><th style="min-width:180px">Module</th>${ACTS.map(a=>`<th>${a}</th>`).join('')}</tr></thead>
+ <tbody id="roleBody">${matrix('Finance Admin')}</tbody></table></div>
+ <div class="card-bd" style="border-top:1px solid var(--border)"><div class="info-note note-warn"><i data-lucide="shield"></i><span>Deleting and suspending cafes additionally requires a typed confirmation, regardless of role. All grants are recorded in <a href="#/audit-logs" style="font-weight:700;text-decoration:underline">Audit Logs</a>.</span></div></div></div>`};
+
+const vAudit=()=>{setTimeout(()=>{const apply=debounce(()=>{const q=$('#auQ').value.toLowerCase(),ty=$('#auTy').value,ad=$('#auAd').value;
+   window._auDt.setRows(AUDIT.filter(l=>(!q||l.msg.toLowerCase().includes(q)||l.cafe.toLowerCase().includes(q)||l.ip.includes(q))
+    &&(ty==='all'||l.type===ty)&&(ad==='all'||l.admin===ad)))},200);
+ window._auDt=dataTable($('#auTable'),{rows:AUDIT,id:'ts',per:10,
+ cols:[{label:'Timestamp',val:l=>+l.ts,sort:1,render:l=>`<span class="mono" style="font-size:11.5px">${fmtDT(l.ts)}</span>`},
+ {label:'Admin',render:l=>l.admin},
+ {label:'Action',render:l=>`<span style="white-space:normal;display:inline-block;max-width:380px">${l.msg}</span>`},
+ {label:'Resource',render:l=>`<span class="chip">${l.type}</span>`},
+ {label:'Cafe',render:l=>l.cafe==='—'?'<span class="faint">—</span>':l.cafe},
+ {label:'IP',render:l=>`<span class="cell-id">${l.ip}</span>`},
+ {label:'Result',render:l=>l.res==='success'?badge('resolved').replace('Resolved','Success'):`<span class="bdg b-r">Failure</span>`}],
+ emptyIcon:'scroll-text',emptyMsg:'No log entries match.'});
+ $('#auQ').oninput=apply;['#auTy','#auAd'].forEach(s=>$(s).onchange=apply)},40);
+ return `<div class="page-hd"><div><h2>Audit Logs</h2><div class="sub">Immutable record of every privileged action.</div></div>
+  <button class="btn" data-action="audit-export"><i data-lucide="download"></i>Export</button></div>
+ <div class="card"><div class="toolbar">
+  <div class="inp-wrap" style="flex:1;max-width:300px"><input class="inp" id="auQ" placeholder="Search action, cafe, IP…" style="padding-left:34px"><i data-lucide="search" style="position:absolute;left:11px;top:11px;width:15px;height:15px;color:var(--text-3)"></i></div>
+  <select class="sel" id="auTy"><option value="all">All resources</option>${['cafe','subscription','billing','plan','admin','auth','settings','export','support','onboarding','payout','announcement','impersonation'].map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+  <select class="sel" id="auAd"><option value="all">All admins</option>${ADMINS.map(a=>`<option>${a.name}</option>`).join('')}</select></div>
+ <div id="auTable"></div></div>`};
+
+const vSettings=()=>{const sec=(ic,t,inner)=>`<div class="card"><div class="card-hd"><h3><i data-lucide="${ic}" style="width:16px;display:inline-block;vertical-align:-3px;margin-right:6px;color:var(--primary)"></i>${t}</h3></div><div class="card-bd">${inner}</div></div>`;
+ return `<div class="page-hd"><div><h2>System Settings</h2><div class="sub">Platform-wide configuration. Changes are audited.</div></div></div>
+ <div class="grid g2">
+ ${sec('settings','Platform',`<div class="fgrid">
+   <div class="field"><label class="lbl">Platform Name</label><input class="inp" value="CafeOS"></div>
+   <div class="field"><label class="lbl">Logo</label><div class="row">${avatar('CafeOS','av')}<button class="btn sm"><i data-lucide="upload"></i>Replace</button></div></div>
+   <div class="field"><label class="lbl">Support Email</label><input class="inp" value="support@cafeos.in"></div>
+   <div class="field"><label class="lbl">Support Phone</label><input class="inp" value="+91 80 4718 2200"></div>
+   <div class="field"><label class="lbl">Default Currency</label><select class="sel"><option>INR (₹)</option><option>AED</option><option>SGD</option></select></div>
+   <div class="field"><label class="lbl">Timezone</label><select class="sel"><option>Asia/Kolkata (IST)</option><option>UTC</option></select></div></div>
+   <button class="btn primary sm" data-action="save-set" data-v="Platform settings">Save</button>`)}
+ ${sec('credit-card','Subscription & Billing',`
+   <div class="fgrid"><div class="field"><label class="lbl">Default Trial Period (days)</label><input class="inp mono" type="number" value="14"></div>
+   <div class="field"><label class="lbl">Grace Period after failure (days)</label><input class="inp mono" type="number" value="5"></div></div>
+   <div class="field"><label class="lbl">Payment Retry Rules</label><select class="sel"><option>Smart Retry — day 1, 3, 5 (Razorpay)</option><option>Immediate only</option><option>Day 1 and 5</option></select></div>
+   <div class="split"><span><b>Auto-suspend after grace period</b><div class="hint">Cafe dashboard becomes read-only; data is retained 90 days.</div></span><label class="sw"><input type="checkbox" checked><i></i></label></div>
+   <button class="btn primary sm mt" data-action="save-set" data-v="Billing rules">Save</button>`)}
+ ${sec('mail','Email',`<div class="fgrid">
+   <div class="field"><label class="lbl">SMTP Host</label><input class="inp mono" value="smtp.postmarkapp.com"></div>
+   <div class="field"><label class="lbl">Port</label><input class="inp mono" value="587"></div>
+   <div class="field"><label class="lbl">Sender Email</label><input class="inp" value="billing@cafeos.in"></div>
+   <div class="field"><label class="lbl">Sender Name</label><input class="inp" value="CafeOS Billing"></div></div>
+   <button class="btn sm" data-action="test-email"><i data-lucide="send"></i>Send test email</button>
+   <button class="btn primary sm" data-action="save-set" data-v="Email settings">Save</button>`)}
+ ${sec('lock','Security',`
+   <div class="fgrid"><div class="field"><label class="lbl">Session Timeout</label><select class="sel"><option>30 minutes</option><option selected>1 hour</option><option>8 hours</option></select></div>
+   <div class="field"><label class="lbl">Login Attempt Limit</label><select class="sel"><option>3 attempts</option><option selected>5 attempts</option><option>10 attempts</option></select></div></div>
+   <div class="split"><span><b>Enforce 2FA for all admins</b><div class="hint">TOTP app required at next sign-in.</div></span><label class="sw"><input type="checkbox" checked><i></i></label></div>
+   <div class="split"><span><b>Require 2FA for impersonation</b></span><label class="sw"><input type="checkbox" checked><i></i></label></div>
+   <div class="field mt"><label class="lbl">Admin console password</label><div class="inp-wrap"><input class="inp" type="password" id="setPass" value="supersecret" style="max-width:280px">
+   <button class="inp-eye" data-action="eye" data-for="setPass" aria-label="Toggle password"><i data-lucide="eye"></i></button></div></div>
+   <button class="btn primary sm" data-action="save-set" data-v="Security settings">Save</button>`)}
+ ${sec('bell','Notifications',`
+   ${[['Payment failure alerts','Instant email + in-app',1],['New cafe registration alerts','Daily digest',1],['Trial expiry alerts (3 days before)','Email to assigned admin',1],['Weekly revenue summary','Every Monday 9 AM',0]]
+   .map(n=>`<div class="split"><span><b>${n[0]}</b><div class="hint">${n[1]}</div></span><label class="sw"><input type="checkbox" ${n[2]?'checked':''}><i></i></label></div>`).join('')}
+   <button class="btn primary sm mt" data-action="save-set" data-v="Notification preferences">Save</button>`)}
+ </div>`};
+
+const vPayouts=()=>`<div class="page-hd"><div><h2>Payouts</h2><div class="sub">Razorpay route settlements to cafe bank accounts.</div></div></div>
+ <div class="kpis mb">${kpi({icon:'wallet',color:'var(--success)',soft:'var(--success-soft)',label:'Settled (30d)',value:1567900,f:'inr',change:7.4})}
+ ${kpi({icon:'timer',color:'var(--warning)',soft:'var(--warning-soft)',label:'Processing',value:129800,f:'inr'})}
+ ${kpi({icon:'landmark',color:'var(--primary)',soft:'var(--primary-soft)',label:'Avg settlement time',value:1.8,vs:'days · T+2 target'})}</div>
+ <div class="card"><div class="card-bd tight table-scroll"><table class="tbl"><thead><tr><th>Payout ID</th><th>Amount</th><th>Channel</th><th>Status</th><th>Initiated</th></tr></thead><tbody>
+ ${PAYOUTS.map(p=>`<tr><td class="cell-id" style="font-weight:600">${p[0]}</td><td class="mono" style="font-weight:600">${inr(p[1])}</td><td><span class="chip">Razorpay Route</span></td><td>${badge(p[2])}</td><td class="muted">${fmtDate(p[3])}</td></tr>`).join('')}</tbody></table></div></div>`;
+
+/* ---------- 8. MODAL BUILDERS ---------- */
+function suspendModal(id){const c=cafe(id);if(!c)return;
+ openModal({title:'Suspend '+c.name+'?',sub:'The cafe loses dashboard & ordering access immediately. Their subscription keeps billing until cancelled.',
+ body:`<div class="dlg-ic" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="ban"></i></div>
+ <div class="info-note note-danger mb"><i data-lucide="alert-triangle"></i><span>This is a <b>dangerous tenant-level action</b> and will be recorded in the audit log with your identity.</span></div>
+ <div class="field"><label class="lbl">Reason <span class="req">*</span></label><textarea class="txt" id="susReason" placeholder="e.g. Repeated chargebacks, T&C violation…"></textarea><div class="ferr">A reason is required.</div></div>
+ <div class="kv" style="grid-template-columns:140px 1fr"><dt>Tenant</dt><dd style="text-align:left;font-family:var(--ui)">${c.name} · ${c.city}</dd><dt>Plan</dt><dd style="text-align:left;font-family:var(--ui)">${PLANS[c.plan].name} · ${inr(PLANS[c.plan].pm)}/mo</dd><dt>Owner</dt><dd style="text-align:left;font-family:var(--ui)">${c.owner}</dd></div>`,
+ foot:`<button class="btn" data-action="modal-close">Cancel</button><button class="btn danger" id="doSuspend" disabled><i data-lucide="ban"></i>Suspend Cafe</button>`});
+ const ta=$('#susReason'),btn=$('#doSuspend');ta.oninput=()=>{btn.disabled=ta.value.trim().length<4;ta.closest('.field').classList.remove('invalid')};
+ btn.onclick=()=>{if(ta.value.trim().length<4)return ta.closest('.field').classList.add('invalid');
+  c.status='suspended';audit(`suspended <b>${esc(c.name)}</b> — ${esc(ta.value)}`,'cafe',c.name);closeModal();toast(c.name+' suspended','warn');route()}}
+function changePlanModal(id){const c=cafe(id);if(!c)return;let target=c.plan;
+ openModal({title:'Change Plan — '+c.name,size:'lg',
+ body:`<div class="grid g2 mb" style="align-items:center"><div class="card" style="box-shadow:none"><div class="card-bd" style="text-align:center"><div class="eyebrow">Current</div>
+   <div style="font-size:20px;font-weight:800;margin:6px 0;color:${PLAN_CLR[c.plan]}">${PLANS[c.plan].name}</div><span class="mono muted">${inr(PLANS[c.plan].pm)}/mo</span></div></div>
+  <div class="card" style="box-shadow:none;border-color:var(--primary)"><div class="card-bd" style="text-align:center"><div class="eyebrow">New plan</div>
+   <select class="sel mt" id="cpNew">${PLAN_ORDER.filter(p=>p!==c.plan).map(p=>`<option value="${p}" ${p==='growth'&&c.plan==='starter'?'selected':''}>${PLANS[p].name} — ${inr(PLANS[p].pm)}/mo</option>`).join('')}</select>
+   <div class="mt" id="cpDiff"></div></div></div></div>
+  <div class="field"><label class="lbl">Effective</label><div class="row">
+   <label class="chip" style="cursor:pointer"><input type="radio" name="cpEff" value="now" checked style="accent-color:var(--primary)"> Immediately (prorated)</label>
+   <label class="chip" style="cursor:pointer"><input type="radio" name="cpEff" value="cycle"> At next billing cycle</label></div></div>`,
+ foot:`<button class="btn" data-action="modal-close">Cancel</button><button class="btn primary" id="doCp"><i data-lucide="check"></i>Confirm Change</button>`});
+ const sel=$('#cpNew'),diff=$('#cpDiff'),upd=()=>{const d=PLANS[sel.value].pm-PLANS[c.plan].pm;
+  diff.innerHTML=d>0?`<span class="delta up"><i data-lucide="arrow-up-right"></i>+${inr(d)}/mo</span>`:`<span class="delta down"><i data-lucide="arrow-down-right"></i>−${inr(Math.abs(d))}/mo</span>`;icons()};
+ sel.onchange=upd;upd();
+ $('#doCp').onclick=()=>{const old=PLANS[c.plan].name;c.plan=sel.value;
+  audit(`changed <b>${esc(c.name)}</b> subscription from ${old} → ${PLANS[c.plan].name}`,'subscription',c.name);
+  closeModal();toast(c.name+' moved to '+PLANS[c.plan].name,'ok');route()}}
+function cancelSubModal(id){const c=cafe(id);
+ openModal({title:'Cancel subscription — '+c.name,
+ body:`<div class="dlg-ic" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="x-circle"></i></div>
+  <div class="kv" style="grid-template-columns:150px 1fr"><dt>Current plan</dt><dd style="text-align:left;font-family:var(--ui)">${PLANS[c.plan].name} · ${inr(PLANS[c.plan].pm)}/mo</dd>
+  <dt>Next billing</dt><dd>${fmtDate(daysAhead(12))}</dd><dt>Access until</dt><dd style="text-align:left;font-family:var(--ui)">${fmtDate(daysAhead(12))} (end of paid period)</dd></div>
+  <div class="field mt"><label class="lbl">Cancellation reason <span class="req">*</span></label><select class="sel" id="ccReason"><option>Too expensive</option><option>Switching to competitor</option><option>Business closed</option><option>Missing features</option><option>Other</option></select></div>`,
+ foot:`<button class="btn" data-action="modal-close">Keep Subscription</button><button class="btn danger" id="doCancel">Cancel Subscription</button>`});
+ $('#doCancel').onclick=()=>{c.status='expired';audit(`cancelled subscription of <b>${esc(c.name)}</b> (${ $('#ccReason').value })`,'subscription',c.name);
+  closeModal();toast('Subscription cancelled','warn');route()}}
+function deleteCafeModal(id){const c=cafe(id);
+ openModal({title:'Permanently delete '+c.name+'?',
+ body:`<div class="dlg-ic" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="trash-2"></i></div>
+ <div class="info-note note-danger mb"><i data-lucide="alert-triangle"></i><span><b>Irreversible.</b> Orders, menus, staff and billing history for this tenant will be purged after the 30-day retention window. Their Razorpay mandates will be cancelled.</span></div>
+ <p class="muted" style="font-size:13px;margin-bottom:10px">Type <b class="mono" style="color:var(--danger)">DELETE</b> to enable the button.</p>
+ <input class="inp mono" id="delConf" placeholder="DELETE" autocomplete="off" aria-label="Type DELETE to confirm">`,
+ foot:`<button class="btn" data-action="modal-close">Cancel</button><button class="btn danger" id="doDelete" disabled><i data-lucide="trash-2"></i>Delete Cafe Forever</button>`});
+ const inp=$('#delConf'),btn=$('#doDelete');inp.oninput=()=>btn.disabled=inp.value!=='DELETE';
+ btn.onclick=()=>{const i=CAFES.indexOf(c);if(i>-1)CAFES.splice(i,1);audit(`deleted tenant <b>${esc(c.name)}</b> permanently`,'cafe',c.name);
+  closeModal();toast(c.name+' deleted','err');location.hash='#/cafes'}}
+function invoiceModal(id){const t=INVOICES.find(x=>x.id===id);if(!t)return;const p=PLANS[t.plan],sub=Math.round(t.amount/1.18),gst=t.amount-sub;
+ openModal({title:'Invoice '+t.id,size:'lg',
+ body:`<div class="inv-doc">
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+   <div><div class="row" style="gap:10px"><span class="sb-logo" style="width:34px;height:34px"><i data-lucide="coffee" style="width:17px;height:17px"></i></span>
+   <div><b style="font-size:16px">CafeOS Technologies Pvt Ltd</b><div class="cell-sub">412, Trade Centre, BKC, Mumbai 400051<br>GSTIN: 27AAACC1206D1ZM</div></div></div></div>
+   <div style="text-align:right"><div class="stamp">${t.st==='paid'?'PAID':t.st.toUpperCase()}</div><div class="mono mt" style="font-size:12px">${t.id}</div></div></div>
+  <hr class="divider"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:14px">
+   <div><div class="eyebrow">Billed to</div><b>${t.cafe.name}</b><div class="cell-sub">${t.cafe.city} · ${t.cafe.email}</div></div>
+   <div class="kv" style="gap:4px 16px"><dt>Period</dt><dd>${t.period}</dd><dt>Due</dt><dd>${fmtDate(t.due)}</dd><dt>Plan</dt><dd>${p.name}</dd></div></div>
+  <table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead><tbody>
+   <tr><td>CafeOS ${p.name} plan — monthly subscription<div class="cell-sub">HSN 998314 · SAC 997331</div></td><td class="mono" style="text-align:right">${inr(sub)}</td></tr>
+   <tr><td>GST @ 18%</td><td class="mono" style="text-align:right">${inr(gst)}</td></tr>
+   <tr><td style="border:0"><b>Total</b></td><td class="mono" style="text-align:right;border:0;font-size:16px;font-weight:700">${inr(t.amount)}</td></tr></tbody></table>
+  <p class="hint mt">Payment collected via Razorpay · ${t.payId}. This is a system-generated invoice.</p></div>`,
+ foot:`<button class="btn" data-action="inv-refund" data-id="${t.id}"><i data-lucide="undo-2"></i>Refund</button>
+ <button class="btn" data-action="inv-send" data-id="${t.id}"><i data-lucide="send"></i>Send to owner</button>
+ <button class="btn primary" data-action="inv-dl" data-id="${t.id}"><i data-lucide="download"></i>Download PDF</button>`})}
+function openTicket(id){const t=TICKETS.find(x=>x.id===id);
+ openModal({title:t.id+' — '+t.subject,sub:t.cafe.name+' · '+t.cafe.owner,size:'lg',
+ body:`<div class="row mb">${badge(t.pr)}${badge(t.st)}<span class="chip">Assigned: ${t.admin}</span></div>
+ <div class="chat" id="chatBox">${t.thread.map(m=>`<div class="msg ${m.role==='admin'?'admin':'user'}"><div class="who">${m.who}<time>${m.t}</time></div>${m.msg}</div>`).join('')}</div>
+ <div class="row mt"><textarea class="txt" id="tReply" placeholder="Write a reply as platform admin…" style="flex:1;min-height:60px"></textarea></div>`,
+ foot:`<select class="sel" id="tSt" style="width:auto">${['open','in_progress','waiting','resolved'].map(s=>`<option value="${s}" ${t.st===s?'selected':''}>${STATUS[s][0]}</option>`).join('')}</select>
+ <button class="btn primary" id="tSend"><i data-lucide="send"></i>Reply</button>`});
+ $('#tSend').onclick=()=>{const v=$('#tReply').value.trim();if(!v)return toast('Write a reply first','warn');
+  t.thread.push({who:'Arjun Mehta',role:'admin',t:fmtDT(new Date()),msg:esc(v)});t.st=$('#tSt').value;t.updated=new Date();
+  $('#chatBox').insertAdjacentHTML('beforeend',`<div class="msg admin"><div class="who">Arjun Mehta<time>${fmtDT(new Date())}</time></div>${esc(v)}</div>`);
+  $('#chatBox').scrollTop=1e5;$('#tReply').value='';toast('Reply sent to '+t.cafe.owner,'ok')};
+ $('#tSt').onchange=e=>{t.st=e.target.value;toast('Ticket marked '+STATUS[t.st][0],'info')}}
+function addAdminModal(){
+ openModal({title:'Add Admin User',
+ body:`<div class="field"><label class="lbl">Full Name <span class="req">*</span></label><input class="inp" id="naName" placeholder="e.g. Rohan Iyer"><div class="ferr">Name required</div></div>
+ <div class="field"><label class="lbl">Email <span class="req">*</span></label><input class="inp" id="naEmail" placeholder="name@cafeos.in"><div class="ferr">Valid email required</div></div>
+ <div class="field"><label class="lbl">Role</label><select class="sel" id="naRole">${Object.keys(ROLE_DESC).map(r=>`<option>${r}</option>`).join('')}</select><div class="hint" id="naRoleHint">${ROLE_DESC['Super Admin']}</div></div>
+ <div class="field"><label class="lbl">Temporary Password <span class="req">*</span></label><div class="inp-wrap"><input class="inp mono" type="password" id="naPass" value="Cafeos@${Math.floor(rnd(Date.now())*9000+1000)}">
+ <button class="inp-eye" data-action="eye" data-for="naPass" aria-label="Toggle password visibility"><i data-lucide="eye"></i></button></div><div class="hint">They must rotate it at first login.</div></div>`,
+ foot:`<button class="btn" data-action="modal-close">Cancel</button><button class="btn primary" id="doAdd"><i data-lucide="user-plus"></i>Create Admin</button>`});
+ $('#naRole').onchange=e=>$('#naRoleHint').textContent=ROLE_DESC[e.target.value];
+ $('#doAdd').onclick=()=>{const n=$('#naName').value.trim(),em=$('#naEmail').value.trim();
+  if(n.length<3)return $('#naName').closest('.field').classList.add('invalid');
+  if(!/^\S+@\S+\.\S+$/.test(em))return $('#naEmail').closest('.field').classList.add('invalid');
+  ADMINS.push({name:n,email:em,role:$('#naRole').value,st:'enabled',last:new Date(),created:new Date()});
+  audit(`created admin user <b>${esc(n)}</b> (${$('#naRole').value})`,'admin');closeModal();toast('Admin invited — magic link emailed','ok');route()}}
+function impersonate(c){openModal({title:'Login as '+c.name+'?',
+ body:`<div class="dlg-ic" style="background:var(--warning-soft);color:var(--warning)"><i data-lucide="eye"></i></div>
+ <p style="font-size:13px">You will see exactly what <b>${c.owner}</b> sees in their cafe dashboard. Impersonation is <b>flagged to the tenant</b> and recorded in the audit log.</p>
+ <div class="info-note note-warn mt"><i data-lucide="shield"></i><span>Platform-level controls remain yours; tenant data shown belongs to <b>${c.name}</b> only.</span></div>`,
+ foot:`<button class="btn" data-action="modal-close">Cancel</button><button class="btn primary" id="doImp"><i data-lucide="log-in"></i>Enter Tenant View</button>`});
+ $('#doImp').onclick=()=>{state.imp=c.id;audit(`logged in as <b>${esc(c.name)}</b> (impersonation)`,'impersonation',c.name);
+  $('#impText').innerHTML=`You are currently viewing <b>&nbsp;${esc(c.name)}&nbsp;</b> as an administrator — tenant context, not platform.`;
+  $('#impBanner').hidden=false;closeModal();toast('Now impersonating '+c.name,'warn')}}
+
+/* ---------- 9. ROUTER ---------- */
+const R={dashboard:{t:'Dashboard',c:['Overview','Dashboard'],v:vDashboard,g:'dashboard'},
+ cafes:{t:'All Cafes',c:['Tenants','All Cafes'],v:vCafes,g:'cafes'},'add-cafe':{t:'Add Cafe',c:['Tenants','Add Cafe'],v:vAddCafe,g:'add-cafe'},
+ requests:{t:'Cafe Requests',c:['Tenants','Cafe Requests'],v:vRequests,g:'requests'},suspended:{t:'Suspended Cafes',c:['Tenants','Suspended'],v:vSuspended,g:'suspended'},
+ plans:{t:'Plans',c:['Subscriptions','Plans'],v:vPlans,g:'plans'},subscriptions:{t:'Active Subscriptions',c:['Subscriptions','Active'],v:vSubs,g:'subscriptions'},
+ trials:{t:'Trials',c:['Subscriptions','Trials'],v:vTrials,g:'trials'},'failed-payments':{t:'Failed Payments',c:['Subscriptions','Failed Payments'],v:vFailed,g:'failed-payments'},
+ revenue:{t:'Revenue Overview',c:['Revenue','Overview'],v:vRevenue,g:'revenue'},transactions:{t:'Transactions',c:['Revenue','Transactions'],v:vTxns,g:'transactions'},
+ payouts:{t:'Payouts',c:['Revenue','Payouts'],v:vPayouts,g:'payouts'},invoices:{t:'Invoices',c:['Revenue','Invoices'],v:vInvoices,g:'invoices'},
+ orders:{t:'Platform Orders',c:['Platform','Orders'],v:vOrders,g:'orders'},products:{t:'Products',c:['Platform','Products'],v:vProducts,g:'products'},
+ staff:{t:'Staff',c:['Platform','Staff'],v:vStaff,g:'staff'},usage:{t:'Usage & Limits',c:['Platform','Usage'],v:vUsage,g:'usage'},
+ support:{t:'Support Tickets',c:['Support','Tickets'],v:vSupport,g:'support'},announcements:{t:'Announcements',c:['Support','Announcements'],v:vAnnounce,g:'announcements'},
+ admins:{t:'Admin Users',c:['System','Admin Users'],v:vAdmins,g:'admins'},roles:{t:'Roles & Permissions',c:['System','Roles'],v:vRoles,g:'roles'},
+ 'audit-logs':{t:'Audit Logs',c:['System','Audit Logs'],v:vAudit,g:'audit-logs'},settings:{t:'System Settings',c:['System','Settings'],v:vSettings,g:'settings'}};
+let routeToken=0;
+function route(){
+  const token=++routeToken;
+  const raw=(location.hash.replace(/^#\/?/,'')||'dashboard').split('?')[0];
+  const parts=raw.split('/');let name=parts[0],p1=parts[1],title,crumb,html;
+  if(name==='cafe'&&p1&&cafe(p1)){const c=cafe(p1);title=c.name;crumb=['Tenants','All Cafes',c.name];html=vCafeDetail(p1);setActive('cafes')}
+  else if(name==='plans'&&p1==='edit'){title='Edit Plan';crumb=['Subscriptions','Plans','Edit'];html=vPlanForm(parts[2]);setActive('plans')}
+  else if(name==='plans'&&p1==='new'){title='Create Plan';crumb=['Subscriptions','Plans','New'];html=vPlanForm(null);setActive('plans')}
+  else{const m=R[name]||R.dashboard;title=m.t;crumb=m.c;html=m.v();setActive(m.g)}
+  $('#pageTitle').textContent=title;document.title=title+' · CafeOS Admin';
+  $('#crumbs').innerHTML=`<a href="#/dashboard">Home</a>`+crumb.map((c,i)=>`<i data-lucide="chevron-right"></i><span>${i===crumb.length-1?'<b style="color:var(--text-2)">'+esc(c)+'</b>':esc(c)}</span>`).join('');
+  const view=$('#view');view.innerHTML=skeleton();icons();
+  setTimeout(()=>{if(token!==routeToken)return;view.innerHTML=`<div class="view-enter">${html}</div>`;icons();countUp();
+    if(name==='cafes')window._cafeApply&&bindCafes();
+    if(name==='dashboard')startLive();
+    view.focus({preventScroll:true});window.scrollTo({top:0})},280)}
+function bindCafes(){
+  window._cafeDt=dataTable($('#cafeTable'),{rows:CAFES,id:'id',per:10,select:true,click:true,bulk:cafeBulk,
+   onRow:c=>location.hash='#/cafe/'+c.id,cols:cafeCols(true),emptyIcon:'store',emptyMsg:'No cafes match these filters.'});
+  const apply=()=>{const q=$('#cafeQ').value.toLowerCase(),st=$('#fStatus').value,pl=$('#fPlan').value,ss=$('#fSub').value,rev=$('#fRev').value,age=$('#fAge').value;
+    window._cafeDt.setRows(CAFES.filter(c=>(!q||c.name.toLowerCase().includes(q)||c.owner.toLowerCase().includes(q)||c.email.includes(q)||c.phone.includes(q))
+      &&(st==='all'||c.status===st)&&(pl==='all'||c.plan===pl)
+      &&(ss==='all'||(ss==='subscribed'?!['trial','pending_setup','expired'].includes(c.status):ss==='trial'?c.status==='trial':c.status===ss))
+      &&(rev==='all'||(rev==='lt5'?c.gmv<5e5:rev==='5to20'?(c.gmv>=5e5&&c.gmv<2e6):c.gmv>=2e6))
+      &&(age==='all'||+c.created>+daysAgo(+age))))};
+  $('#cafeQ').oninput=debounce(apply,200);['#fStatus','#fPlan','#fSub','#fRev','#fAge'].forEach(s=>$(s).onchange=apply)}
+function setActive(g){$$('.sb-item').forEach(a=>a.classList.toggle('active',a.dataset.nav===g));
+  if(window.innerWidth<=900)document.body.classList.remove('sb-open')}
+let liveTimer=null;
+function startLive(){clearInterval(liveTimer);let n=6847;liveTimer=setInterval(()=>{const el=$('#liveOrders');if(!el)return clearInterval(liveTimer);
+  n+=Math.floor(Math.random()*7)+1;el.textContent=INRF.format(n)},4000)}
+
+/* ---------- 10. COMMAND PALETTE ---------- */
+let ckItems=[],ckIdx=0;
+function openCmdk(){$('#ckRoot').innerHTML=`<div class="ck-ovl" data-action="ck-close"><div class="cmdk" role="dialog" aria-label="Command palette">
+  <div class="ck-in"><i data-lucide="search"></i><input id="ckIn" placeholder="Search cafes, owners, orders, subscriptions, invoices…" autocomplete="off">
+  <kbd>ESC</kbd></div><div class="ck-list" id="ckList"></div></div></div>`;icons();
+ const inp=$('#ckIn');inp.focus();inp.oninput=debounce(()=>drawCk(inp.value),120);drawCk('');ckIdx=0}
+function ckPool(q){q=q.toLowerCase();const P=[];
+  CAFES.filter(c=>!q||c.name.toLowerCase().includes(q)||c.owner.toLowerCase().includes(q)||c.email.includes(q)).slice(0,5)
+   .forEach(c=>P.push({g:'Cafes',ic:'store',t:c.name,s:c.owner+' · '+PLANS[c.plan].name,m:()=>location.hash='#/cafe/'+c.id}));
+  CAFES.filter(c=>!q||c.subId.toLowerCase().includes(q)).slice(0,3)
+   .forEach(c=>P.push({g:'Subscriptions',ic:'credit-card',t:c.subId,s:c.name+' · '+c.cycle,m:()=>location.hash='#/cafe/'+c.id}));
+  ORDERS.filter(o=>!q||o.id.toLowerCase().includes(q)).slice(0,3)
+   .forEach(o=>P.push({g:'Orders',ic:'shopping-bag',t:o.id,s:o.cafe.name+' · '+inr(o.amount),m:()=>location.hash='#/orders'}));
+  INVOICES.filter(i=>!q||i.id.toLowerCase().includes(q)).slice(0,3)
+   .forEach(i=>P.push({g:'Invoices',ic:'receipt',t:i.id,s:i.cafe.name+' · '+inr(i.amount),m:()=>location.hash='#/invoices'}));
+  TXNS.filter(t=>!q||t.payId.toLowerCase().includes(q)||t.id.toLowerCase().includes(q)).slice(0,3)
+   .forEach(t=>P.push({g:'Transactions',ic:'arrow-left-right',t:t.id,s:t.payId+' · '+t.st,m:()=>location.hash='#/transactions'}));
+  Object.entries(R).filter(([k,m])=>!q||m.t.toLowerCase().includes(q)).slice(0,q?4:0)
+   .forEach(([k,m])=>P.push({g:'Pages',ic:'layout-grid',t:m.t,s:m.c[0],m:()=>location.hash='#/'+k}));
+  return P.slice(0,14)}
+function drawCk(q){ckItems=ckPool(q);
+  $('#ckList').innerHTML=ckItems.length?ckItems.map((it,i)=>`<div class="ck-item ${i===ckIdx?'sel':''}" data-cki="${i}">
+   <span class="ck-ic"><i data-lucide="${it.ic}"></i></span><div><b>${esc(it.t)}</b><span class="sub2">${esc(it.s)}</span></div><small>${it.g}</small></div>`).join('')
+   +(q?'':'<div class="ck-group" style="border-top:1px solid var(--border);margin-top:6px">Tip: use ↑ ↓ and Enter to navigate</div>')
+  :emptyState('search','No results for “'+esc(q)+'”','Try a cafe name, owner email, order ID, subscription ID or page.');
+  icons();$$('[data-cki]').forEach(el=>el.onclick=()=>{ckItems[+el.dataset.cki].m();closeCk()})}
+function closeCk(){$('#ckRoot').innerHTML=''}
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#ckRoot').innerHTML?closeCk():openCmdk();return}
+  if(e.key==='Escape'){closeCk();closeModal();$$('.menu.open').forEach(m=>m.classList.remove('open'))}
+  if($('#ckRoot').innerHTML&&$('#ckIn')&&document.activeElement===$('#ckIn')){
+    if(e.key==='ArrowDown'){e.preventDefault();ckIdx=Math.min(ckItems.length-1,ckIdx+1);drawCk($('#ckIn').value)}
+    if(e.key==='ArrowUp'){e.preventDefault();ckIdx=Math.max(0,ckIdx-1);drawCk($('#ckIn').value)}
+    if(e.key==='Enter'&&ckItems[ckIdx]){ckItems[ckIdx].m();closeCk()}}});
+
+/* ---------- 11. GLOBAL ACTION DISPATCH ---------- */
+const state={imp:null};
+const ACTIONS={
+ 'sb-collapse':()=>{document.body.classList.toggle('sb-collapsed');localStorage.setItem('sb',document.body.classList.contains('sb-collapsed')?'1':'0')},
+ 'sb-mobile':()=>document.body.classList.toggle('sb-open'),
+ 'sb-close':()=>document.body.classList.remove('sb-open'),
+ 'theme':()=>{const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
+   localStorage.setItem('th',h.dataset.theme);$('#themeBtn').innerHTML=`<i data-lucide="${h.dataset.theme==='dark'?'sun':'moon'}"></i>`;icons();route()},
+ 'cmdk':openCmdk,
+ 'quick':(t)=>toggleMenu(t,'quickMenu'),
+ 'notif-toggle':(t)=>{renderNotifMenu();toggleMenu(t,'notifMenu')},
+ 'notif-go':(t,e)=>{const n=NOTIFS[+t.dataset.i];n.read=true;updateNotifDot();location.hash='#/'+n.go;$$('.menu.open').forEach(m=>m.classList.remove('open'))},
+ 'notif-allread':()=>{NOTIFS.forEach(n=>n.read=true);updateNotifDot();renderNotifMenu();toast('All notifications marked as read','ok')},
+ 'prof':(t)=>toggleMenu(t,t.closest('.dd').querySelector('.menu')),
+ 'rowmenu':(t,e)=>{e.stopPropagation();const m=t.closest('.dd').querySelector('.menu');const was=m.classList.contains('open');
+   $$('.menu.open').forEach(x=>x.classList.remove('open'));if(!was)m.classList.add('open')},
+ 'modal-close':()=>closeModal(),
+ 'ovl':t=>{if(t.classList.contains('ovl'))closeModal()},
+ 'eye':t=>{const i=$('#'+t.dataset.for);if(!i)return;const show=i.type==='password';i.type=show?'text':'password';
+   t.innerHTML=`<i data-lucide="${show?'eye-off':'eye'}"></i>`;icons()},
+ 'logout':()=>confirmModal('Sign out of CafeOS Admin?','Your session ends on this device only.','Sign out',()=>toast('Signed out — session cleared','info'),false),
+ 'help':()=>openModal({title:'Help & Shortcuts',body:`<div class="kv" style="grid-template-columns:auto 1fr;gap:12px 18px">
+   <dt><kbd class="mono">⌘K</kbd></dt><dd style="text-align:left;font-family:var(--ui)">Global search / command palette</dd>
+   <dt><kbd class="mono">Esc</kbd></dt><dd style="text-align:left;font-family:var(--ui)">Close dialogs & menus</dd>
+   <dt><kbd class="mono">↑ ↓ ⏎</kbd></dt><dd style="text-align:left;font-family:var(--ui)">Navigate palette results</dd></div>
+   <div class="info-note note-info mt"><i data-lucide="life-buoy"></i><span>Docs: <b>docs.cafeos.in/master-admin</b> · Slack: <b>#platform-ops</b></span></div>`,
+   foot:'<button class="btn primary" data-action="modal-close">Got it</button>'},()=>{}),
+ 'export-cafes':()=>exportCSV('cafes.csv',[['Cafe','Owner','Email','Plan','Status','Orders','GMV'],...CAFES.map(c=>[c.name,c.owner,c.email,PLANS[c.plan].name,c.status,c.orders,c.gmv])]),
+ 'export-cafe':t=>{const c=cafe(t.dataset.id);exportCSV(c.slug+'-tenant.csv',[['Field','Value'],['Cafe',c.name],['Owner',c.owner],['Plan',c.plan],['Status',c.status],['Orders',c.orders],['GMV',c.gmv]])},
+ 'suspend-cafe':t=>suspendModal(t.dataset.id),
+ 'reactivate':t=>{const c=cafe(t.dataset.id);c.status='active';audit(`reactivated <b>${esc(c.name)}</b>`,'cafe',c.name);toast(c.name+' reactivated','ok');route()},
+ 'delete-cafe':t=>deleteCafeModal(t.dataset.id),
+ 'change-plan':t=>changePlanModal(t.dataset.id),
+ 'cancel-sub':t=>cancelSubModal(t.dataset.id),
+ 'pause-sub':t=>toast('Subscription paused — next charge skipped','info'),
+ 'impersonate':t=>impersonate(cafe(t.dataset.id)),
+ 'imp-exit':()=>{const c=cafe(state.imp);state.imp=null;$('#impBanner').hidden=true;audit(`exited impersonation of <b>${c?esc(c.name):'tenant'}</b>`,'impersonation');toast('Returned to platform view','ok')},
+ 'contact-owner':t=>{const c=cafe(t.dataset.id);toast('Draft email opened to '+c.email,'info')},
+ 'announce-cafe':()=>{location.hash='#/announcements';toast('Audience set to this cafe','info')},
+ 'tab':t=>{const c=cafe(location.hash.split('/')[2]);if(!c)return;$$('.tab').forEach(x=>x.classList.toggle('on',x===t));
+   const body=$('#cafeTabBody');body.innerHTML='<div class="sk" style="height:200px"></div>';
+   setTimeout(()=>{body.innerHTML=vCafeDetail(c.id).match(/<div class="card-bd">\s*<div class="tabs">[\s\S]*?<\/div>([\s\S]*)<\/div><\/div><script/);routeTab(c,t.dataset.tab)},200)},
+ 'w-next':()=>wizardNext(1),'w-back':()=>wizardNext(-1),
+ 'w-plan':t=>{window.W.plan=t.dataset.v;refreshWizard()},
+ 'w-billing':t=>{window.W.billing=t.dataset.v;refreshWizard()},
+ 'w-verify':()=>{const id=$('#wRzpId'),sec=$('#wRzpSec');
+   if(!id.value.trim())return id.classList.add('err');if(!sec||!sec.value.trim())return toast('Enter the Key Secret','warn');
+   const b=$('#wVerifyBtn');b.disabled=true;b.classList.add('spin');b.innerHTML='<i data-lucide="loader-2"></i>Verifying with Razorpay…';icons();
+   setTimeout(()=>{window.W.verified=true;window.W.rzpId=id.value;toast('✓ Connection successful — LIVE mode','ok');refreshWizard()},1100)},
+ 'w-create':()=>{const d=window.W;
+   CAFES.unshift({id:'c'+(CAFES.length+1),name:d.name,slug:d.slug,owner:d.owner||'Owner',city:d.city,email:d.email,phone:d.phone||'+91 98…',
+    plan:d.plan,status:'pending_setup',subId:'sub_'+Math.random().toString(36).slice(2,10).toUpperCase(),cycle:d.billing,orders:0,gmv:0,aov:0,
+    created:new Date(),lastActive:new Date(),staff:0,staffTotal:0,products:0,storage:'0.1',rzpKey:d.rzpId||'—'});
+   audit(`created cafe <b>${esc(d.name)}</b> on ${PLANS[d.plan].name}`,'onboarding',d.name);
+   toast('🎉 '+d.name+' created & provisioned','ok');location.hash='#/cafes'},
+ 'req-approve':t=>{const r=REQUESTS.find(x=>x.id===t.dataset.id);const i=REQUESTS.indexOf(r);REQUESTS.splice(i,1);
+   CAFES.unshift({id:'c'+(CAFES.length+1),name:r.cafe,slug:r.cafe.toLowerCase().replace(/\W+/g,'-'),owner:r.owner,city:'—',email:r.email,phone:'—',plan:r.plan,status:'active',
+    subId:'sub_'+Math.random().toString(36).slice(2,10).toUpperCase(),cycle:'monthly',orders:0,gmv:0,aov:0,created:new Date(),lastActive:new Date(),staff:0,staffTotal:1,products:0,storage:'0.1'});
+   audit(`approved onboarding request for <b>${esc(r.cafe)}</b>`,'onboarding',r.cafe);toast(r.cafe+' approved & activated','ok');route()},
+ 'req-reject':t=>{const r=REQUESTS.find(x=>x.id===t.dataset.id);
+   confirmModal('Reject '+r.cafe+'?','The owner will be notified with the standard rejection email.','Reject',()=>{REQUESTS.splice(REQUESTS.indexOf(r),1);toast('Request rejected','warn');route()})},
+ 'req-view':t=>{const r=REQUESTS.find(x=>x.id===t.dataset.id);
+   openModal({title:'Request — '+r.cafe,body:`<div class="kv" style="grid-template-columns:150px 1fr"><dt>Owner</dt><dd style="text-align:left;font-family:var(--ui)">${r.owner}</dd><dt>Email</dt><dd>${r.email}</dd><dt>Plan</dt><dd style="text-align:left;font-family:var(--ui)">${PLANS[r.plan].name}</dd><dt>Docs</dt><dd style="text-align:left;font-family:var(--ui)">${r.ver.join(', ')}</dd><dt>Applied</dt><dd>${fmtDate(r.date)}</dd></div>`,
+   foot:`<button class="btn" data-action="modal-close">Close</button><button class="btn primary" data-action="req-approve" data-id="${r.id}">Approve</button>`},()=>{})},
+ 'trial-convert':t=>{const c=cafe(t.dataset.id);if(c)c.status='active';toast((c?c.name:'Cafe')+' converted to paid 🎉','ok');audit(`converted trial <b>${c?esc(c.name):''}</b> to paid`,'subscription',c?c.name:'—');route()},
+ 'trial-extend':t=>{const c=cafe(t.dataset.id);if(c)c.trialDaysLeft=(c.trialDaysLeft||0)+7;toast('Trial extended by 7 days','ok');route()},
+ 'trial-filter':t=>{const v=t.dataset.v;$$('[data-action="trial-filter"]').forEach(b=>b.classList.toggle('primary',b===t));
+   const rows=CAFES.filter(c=>c.status==='trial');window._trDt&&window._trDt.setRows(v==='all'?rows:rows.filter(c=>(c.trialDaysLeft||0)<=+v))},
+ 'pay-retry':t=>{const btn=t;btn.disabled=true;btn.classList.add('spin');btn.innerHTML='<i data-lucide="loader-2"></i>';icons();
+   setTimeout(()=>{const r=window._fpRows.find(x=>x.id===t.dataset.id);if(r)r.recovered=true;
+    toast('Payment of '+inr(r.amount)+' recovered from '+r.cafe.name,'ok');audit(`recovered payment ${inr(r.amount)} for <b>${esc(r.cafe.name)}</b>`,'billing',r.cafe.name);window._fpDt.refresh()},1200)},
+ 'rev-range':t=>{$$('[data-action="rev-range"]').forEach(b=>b.classList.remove('primary'));t.classList.add('primary');window._revDraw&&window._revDraw(t.dataset.v)},
+ 'rev-custom':()=>openModal({title:'Custom range',body:`<div class="fgrid"><div class="field"><label class="lbl">From</label><input type="date" class="inp" value="2026-06-01"></div><div class="field"><label class="lbl">To</label><input type="date" class="inp" value="2026-08-19"></div></div>`,
+   foot:`<button class="btn" data-action="modal-close">Cancel</button><button class="btn primary" data-action="modal-close">Apply</button>`},()=>{}),
+ 'inv-view':t=>invoiceModal(t.dataset.id),
+ 'inv-dl':t=>toast('Invoice '+t.dataset.id+' downloading…','info'),
+ 'inv-send':t=>toast('Invoice emailed to the owner','ok'),
+ 'inv-refund':t=>{const inv=INVOICES.find(x=>x.id===t.dataset.id);if(!inv)return;
+   confirmModal('Refund '+inr(inv.amount)+' to '+inv.cafe.name+'?','Processed instantly via Razorpay. The invoice will be marked refunded.','Refund',()=>{inv.st='refunded';toast('Refund issued','warn');closeModal();route()})},
+ 'nudge':t=>{const c=cafe(t.dataset.id);toast('Upgrade nudge emailed to '+c.owner,'ok')},
+ 'dup-plan':t=>toast(PLANS[t.dataset.id].name+' duplicated as draft','ok'),
+ 'archive-plan':t=>toast('Only custom plans can be archived','warn'),
+ 'save-plan':()=>{const n=$('#pName');if(n&&!n.value.trim())return n.classList.add('err');toast('Plan saved to catalogue','ok');audit('updated plan pricing/limits','plan');setTimeout(()=>location.hash='#/plans',600)},
+ 'ad-add':addAdminModal,
+ 'ad-edit':t=>toast('Editing '+t.dataset.id,'info'),
+ 'ad-reset':t=>confirmModal('Reset password?','A secure reset link will be emailed to '+t.dataset.id+'.','Send Reset Link',()=>toast('Reset link sent','ok'),false),
+ 'ad-toggle':t=>{const a=ADMINS.find(x=>x.email===t.dataset.id);a.st=a.st==='enabled'?'disabled':'enabled';
+   audit(`${a.st==='disabled'?'disabled':'enabled'} admin <b>${esc(a.name)}</b>`,'admin');toast(a.name+' '+(a.st==='disabled'?'disabled':'enabled'),a.st==='disabled'?'warn':'ok');route()},
+ 'role-tab':t=>{window._role=t.dataset.v;$$('[data-action="role-tab"]').forEach(b=>b.classList.toggle('primary',b===t));
+   $('#roleBody').innerHTML=window._roleMatrix(t.dataset.v);icons();
+   if(t.dataset.v==='Super Admin')toast('Super Admin has full access — matrix locked','info')},
+ 'roles-save':()=>{audit(`updated permission matrix for <b>${window._role}</b>`,'admin');toast('Permission matrix saved','ok')},
+ 'an-send':()=>{const t=$('#anTitle'),m=$('#anMsg');let ok=true;
+   if(!t.value.trim()){t.closest('.field').classList.add('invalid');ok=false}else t.closest('.field').classList.remove('invalid');
+   if(!m.value.trim()){m.closest('.field').classList.add('invalid');ok=false}else m.closest('.field').classList.remove('invalid');
+   if(!ok)return;
+   const when=$('#anWhen').value,sched=!!when;
+   ANNOUNCEMENTS.unshift({title:esc(t.value),type:$('#anType').value,aud:$('#anAud').value,when:(sched?'Scheduled · '+new Date(when).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Sent · just now'),st:sched?'scheduled':'sent',body:esc(m.value)});
+   audit(`sent announcement "${esc(t.value)}" to ${$('#anAud').value}`,'announcement',$('#anAud').value);
+   toast(sched?'Announcement scheduled':'Announcement published to '+$('#anAud').value,'ok');route()},
+ 'an-draft':()=>toast('Draft saved','info'),
+ 'audit-export':()=>exportCSV('audit-logs.csv',[['Timestamp','Admin','Action','Resource','Cafe','IP','Result'],...AUDIT.map(l=>[fmtDT(l.ts),l.admin,l.msg.replace(/<[^>]+>/g,''),l.type,l.cafe,l.ip,l.res])]),
+ 'save-set':t=>{audit(`updated ${t.dataset.v}`,'settings');toast(t.dataset.v+' saved','ok')},
+ 'test-email':()=>toast('Test email sent to arjun@cafeos.in','ok'),
+};
+function toggleMenu(btn,sel){const m=sel?$('#'+sel):btn.closest('.dd').querySelector('.menu');const was=m.classList.contains('open');
+  $$('.menu.open').forEach(x=>x!==m&&x.classList.remove('open'));m.classList.toggle('open',!was);icons()}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.dd'))$$('.menu.open').forEach(m=>m.classList.remove('open'));
+  const t=e.target.closest('[data-action]');if(!t)return;
+  const fn=ACTIONS[t.dataset.action];if(fn){e.preventDefault();fn(t,e)}});
+
+/* Wizard step helpers */
+function refreshWizard(){const scroll=window.scrollY;const main=$('#view .view-enter')||$('#view');const keep=main.innerHTML;
+  $('#view').innerHTML=`<div class="view-enter">${wizardHTML()}</div>`;icons();window.scrollTo(0,scroll)}
+function wizardNext(dir){const W=window.W,d=W.d;
+  const grab={1:()=>{d.name=$('#wName').value.trim();d.slug=$('#wSlug').value.trim()||d.name.toLowerCase().replace(/[^a-z0-9]+/g,'-');d.addr=$('#wAddr').value;d.city=$('#wCity').value.trim();d.state=$('#wState').value;d.phone=$('#wPhone').value;d.email=$('#wEmail').value.trim();
+    let ok=true;const need=(cond,sel)=>{const el=$(sel);el.classList.toggle('err',!cond);el.closest('.field').classList.toggle('invalid',!cond);if(!cond)ok=false};
+    need(d.name,'#wName');need(d.city,'#wCity');need(/^\S+@\S+\.\S+$/.test(d.email),'#wEmail');need(d.phone.length>=10,'#wPhone');return ok},
+   2:()=>{d.owner=$('#wOwner').value.trim();d.ownerEmail=$('#wOwnerEmail').value.trim();d.ownerPhone=$('#wOwnerPhone').value;
+    let ok=true;const need=(cond,sel)=>{const el=$(sel);el.classList.toggle('err',!cond);el.closest('.field').classList.toggle('invalid',!cond);if(!cond)ok=false};
+    need(d.owner,'#wOwner');need(/^\S+@\S+\.\S+$/.test(d.ownerEmail),'#wOwnerEmail');return ok},
+   3:()=>true,4:()=>{if(!d.verified){toast('Verify Razorpay credentials to continue','warn');return false}return true},5:()=>true}[W.step];
+  if(dir>0&&!grab())return;
+  W.step=Math.min(5,Math.max(1,W.step+dir));refreshWizard()}
+
+/* ---------- 12. INIT ---------- */
+(function init(){
+  const th=localStorage.getItem('th');if(th)document.documentElement.dataset.theme=th;
+  if(localStorage.getItem('sb')==='1')document.body.classList.add('sb-collapsed');
+  renderSidebar();renderTopbar();icons();route();
+  window.addEventListener('hashchange',route);
+  if(!location.hash)location.hash='#/dashboard';
+  /* autoslug preview in wizard */
+  document.addEventListener('input',e=>{if(e.target.id==='wName'){const s=$('#wSlug');
+    if(s&&!s.value)s.placeholder=e.target.value.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'auto-generated';
+    const p=$('#slugPrev');if(p)p.textContent=e.target.value.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'…'}
+   if(e.target.closest('.field'))e.target.closest('.field').classList.remove('invalid');
+   e.target.classList.remove('err')});
+})();
+</script>
+</body>
+</html>
